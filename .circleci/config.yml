@@ -1,0 +1,28 @@
+version: 2.1
+
+jobs:
+  python_lint:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off flake8 typing
+            flake8 .
+
+  test:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off torch torchvision scipy pytest
+            pytest .
+
+workflows:
+  build:
+    jobs:
+      - python_lint
+      - test
