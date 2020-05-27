@@ -17,7 +17,7 @@ Training code follows this idea - it is not a library,
 but simply a [main.py](main.py) importing model and criterion
 definitions with standard training loops.
 
-For details see the arxiv preprint [End-to-End Object Detection with Transformers](https://arxiv.org/abs/2005.12872) by Nicolas Carion, Francisco Massa, Gabriel Synnaeve, Nicolas Usunier, Alexander Kirillov, and Sergey Zagoruyko.
+For details see [End-to-End Object Detection with Transformers](https://ai.facebook.com/research/publications/end-to-end-object-detection-with-transformers) by Nicolas Carion, Francisco Massa, Gabriel Synnaeve, Nicolas Usunier, Alexander Kirillov, and Sergey Zagoruyko.
 
 # Model Zoo
 We provide baseline DETR and DETR-DC5 models, and plan to include more in future.
