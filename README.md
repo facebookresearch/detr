@@ -142,7 +142,7 @@ There are no extra compiled components in DETR and package dependencies are mini
 so the code is very simple to use. We provide instructions how to install dependencies via conda.
 First, clone the repository locally:
 ```
-git clone https://github.com/fairinternal/detection-transformer.git
+git clone https://github.com/facebookresearch/detr.git
 ```
 Then, install PyTorch 1.5+ and torchvision 0.6+:
 ```
