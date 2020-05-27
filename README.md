@@ -11,7 +11,7 @@ Given a fixed small set of learned object queries, DETR reasons about the relati
 **About the code**. We believe that object detection should not be more difficult than classification,
 and should not require complex libraries for training and inference.
 DETR is very simple to implement and experiment with, and we provide a
-[standalone Colab Notebook](https://colab.research.google.com/drive/1rPm0-UrWHpJJRX9PsNb5SpzZiUlMh7wm)
+[standalone Colab Notebook](https://colab.research.google.com/github/facebookresearch/detr/blob/colab/notebooks/detr_demo.ipynb)
 showing how to do inference with DETR in only a few lines of PyTorch code.
 Training code follows this idea - it is not a library,
 but simply a [main.py](main.py) importing model and criterion
