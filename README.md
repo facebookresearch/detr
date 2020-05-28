@@ -102,10 +102,10 @@ COCO panoptic val5k models:
       <th>0</th>
       <td>DETR</td>
       <td>R50</td>
-      <td>38.7</td>
-      <td>31.4</td>
-      <td>44.0</td>
-      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r50-panoptic-b423a359.pth">download</a></td>
+      <td>38.8</td>
+      <td>31.1</td>
+      <td>43.4</td>
+      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r50-panoptic-00ce5173.pth">download</a></td>
       <td>165Mb</td>
     </tr>
     <tr>
@@ -115,7 +115,7 @@ COCO panoptic val5k models:
       <td>40.2</td>
       <td>31.9</td>
       <td>44.6</td>
-      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r50-dc5-panoptic-ac925135.pth">download</a></td>
+      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r50-dc5-panoptic-da08f1b1.pth">download</a></td>
       <td>165Mb</td>
     </tr>
     <tr>
@@ -125,7 +125,7 @@ COCO panoptic val5k models:
       <td>40.1</td>
       <td>33</td>
       <td>45.1</td>
-      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r101-panoptic-0fa498b3.pth">download</a></td>
+      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r101-panoptic-40021d53.pth">download</a></td>
       <td>237Mb</td>
     </tr>
   </tbody>
