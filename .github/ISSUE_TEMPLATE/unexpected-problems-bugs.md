@@ -31,7 +31,7 @@ If you expect the model to converge / work better, note that we do not give sugg
 on how to train a new model.
 Only in one of the two conditions we will help with it:
 (1) You're unable to reproduce the results in DETR model zoo.
-(2) It indicates a detectron2 bug.
+(2) It indicates a DETR bug.
 
 ## Environment:
 
