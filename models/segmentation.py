@@ -223,17 +223,15 @@ class PostProcessSegm(nn.Module):
         assert len(orig_target_sizes) == len(max_target_sizes)
         max_h, max_w = max_target_sizes.max(0)[0].tolist()
         outputs_masks = outputs["pred_masks"].squeeze(2)
-        outputs_masks = F.interpolate(
-            outputs_masks, size=(max_h, max_w), mode="bilinear", align_corners=False
-        )
+        outputs_masks = F.interpolate(outputs_masks, size=(max_h, max_w), mode="bilinear", align_corners=False)
         outputs_masks = (outputs_masks.sigmoid() > self.threshold).cpu()
 
         for i, (cur_mask, t, tt) in enumerate(zip(outputs_masks, max_target_sizes, orig_target_sizes)):
             img_h, img_w = t[0], t[1]
             results[i]["masks"] = cur_mask[:, :img_h, :img_w].unsqueeze(1)
-            results[i]["masks"] = F.interpolate(results[i]["masks"].float(),
-                                                size=tuple(tt.tolist()),
-                                                mode="nearest").byte()
+            results[i]["masks"] = F.interpolate(
+                results[i]["masks"].float(), size=tuple(tt.tolist()), mode="nearest"
+            ).byte()
 
         return results
 
@@ -242,25 +240,41 @@ class PostProcessPanoptic(nn.Module):
     """This class converts the output of the model to the final panoptic result, in the format expected by the
     coco panoptic API """
 
-    def __init__(self, is_thing_map, rescale_to_orig_size=False, threshold=0.85):
+    def __init__(self, is_thing_map, threshold=0.85):
         """
         Parameters:
            is_thing_map: This is a whose keys are the class ids, and the values a boolean indicating whether
                           the class is  a thing (True) or a stuff (False) class
-           rescale_to_orig_size: If true, we use rescale the prediction to the size of the original image.
-                                 Otherwise, we keep the size after data augmentation
            threshold: confidence threshold: segments with confidence lower than this will be deleted
         """
         super().__init__()
-        self.rescale_to_orig_size = rescale_to_orig_size
         self.threshold = threshold
         self.is_thing_map = is_thing_map
 
-    def forward(self, outputs, targets):
+    def forward(self, outputs, processed_sizes, target_sizes=None):
+        """ This function computes the panoptic prediction from the model's predictions.
+        Parameters:
+            outputs: This is a dict coming directly from the model. See the model doc for the content.
+            processed_sizes: This is a list of tuples (or torch tensors) of sizes of the images that were passed to the
+                             model, ie the size after data augmentation but before batching.
+            target_sizes: This is a list of tuples (or torch tensors) corresponding to the requested final size
+                          of each prediction. If left to None, it will default to the processed_sizes
+            """
+        if target_sizes is None:
+            target_sizes = processed_sizes
+        assert len(processed_sizes) == len(target_sizes)
         out_logits, raw_masks, raw_boxes = outputs["pred_logits"], outputs["pred_masks"], outputs["pred_boxes"]
-        assert len(out_logits) == len(raw_masks) == len(targets)
+        assert len(out_logits) == len(raw_masks) == len(target_sizes)
         preds = []
-        for cur_logits, cur_masks, cur_boxes, target in zip(out_logits, raw_masks, raw_boxes, targets):
+
+        def to_tuple(tup):
+            if isinstance(tup, tuple):
+                return tup
+            return tuple(tup.cpu().tolist())
+
+        for cur_logits, cur_masks, cur_boxes, size, target_size in zip(
+            out_logits, raw_masks, raw_boxes, processed_sizes, target_sizes
+        ):
             # we filter empty queries and detection below threshold
             scores, labels = cur_logits.softmax(-1).max(-1)
             keep = labels.ne(outputs["pred_logits"].shape[-1] - 1) & (scores > self.threshold)
@@ -268,7 +282,7 @@ class PostProcessPanoptic(nn.Module):
             cur_scores = cur_scores[keep]
             cur_classes = cur_classes[keep]
             cur_masks = cur_masks[keep]
-            cur_masks = interpolate(cur_masks[None], tuple(target["size"].tolist()), mode="bilinear").squeeze(0)
+            cur_masks = interpolate(cur_masks[None], to_tuple(size), mode="bilinear").squeeze(0)
             cur_boxes = box_ops.box_cxcywh_to_xyxy(cur_boxes[keep])
 
             h, w = cur_masks.shape[-2:]
@@ -301,8 +315,7 @@ class PostProcessPanoptic(nn.Module):
                             for eq_id in equiv:
                                 m_id.masked_fill_(m_id.eq(eq_id), equiv[0])
 
-                field = "orig_size" if self.rescale_to_orig_size else "size"
-                final_h, final_w = target[field].cpu().unbind(0)
+                final_h, final_w = to_tuple(target_size)
 
                 seg_img = Image.fromarray(id2rgb(m_id.view(h, w).cpu().numpy()))
                 seg_img = seg_img.resize(size=(final_w, final_h), resample=Image.NEAREST)
@@ -335,22 +348,14 @@ class PostProcessPanoptic(nn.Module):
             else:
                 cur_classes = torch.ones(1, dtype=torch.long, device=cur_classes.device)
 
-            image_id = target["image_id"].item()
-
             segments_info = []
             for i, a in enumerate(area):
                 cat = cur_classes[i].item()
                 segments_info.append({"id": i, "isthing": self.is_thing_map[cat], "category_id": cat, "area": a})
             del cur_classes
 
-            file_name = f"{image_id:012d}.png"
             with io.BytesIO() as out:
                 seg_img.save(out, format="PNG")
-                predictions = {
-                    "image_id": image_id,
-                    "file_name": file_name,
-                    "png_string": out.getvalue(),
-                    "segments_info": segments_info,
-                }
+                predictions = {"png_string": out.getvalue(), "segments_info": segments_info}
             preds.append(predictions)
         return preds
