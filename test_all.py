@@ -53,7 +53,7 @@ class Tester(unittest.TestCase):
 
     def test_position_encoding_script(self):
         m1, m2 = PositionEmbeddingSine(), PositionEmbeddingLearned()
-        mm1, mm2 = torch.jit.script(m1), torch.jit.script(m2)
+        mm1, mm2 = torch.jit.script(m1), torch.jit.script(m2)  # noqa
 
     def test_backbone_script(self):
         backbone = Backbone('resnet50', True, False, False)
