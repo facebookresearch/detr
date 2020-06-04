@@ -9,6 +9,7 @@ import torch.nn.functional as F
 import torchvision
 from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
+from typing import Dict, List
 
 from util.misc import NestedTensor
 
@@ -64,15 +65,17 @@ class BackboneBase(nn.Module):
         if return_interm_layers:
             return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
         else:
-            return_layers = {'layer4': 0}
+            return_layers = {'layer4': "0"}
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
         self.num_channels = num_channels
 
-    def forward(self, tensor_list):
+    def forward(self, tensor_list: NestedTensor):
         xs = self.body(tensor_list.tensors)
-        out = OrderedDict()
+        out: Dict[str, NestedTensor] = {}
         for name, x in xs.items():
-            mask = F.interpolate(tensor_list.mask[None].float(), size=x.shape[-2:]).bool()[0]
+            m = tensor_list.mask
+            assert m is not None
+            mask = F.interpolate(m[None].float(), size=x.shape[-2:]).to(torch.bool)[0]
             out[name] = NestedTensor(x, mask)
         return out
 
@@ -94,9 +97,9 @@ class Joiner(nn.Sequential):
     def __init__(self, backbone, position_embedding):
         super().__init__(backbone, position_embedding)
 
-    def forward(self, tensor_list):
+    def forward(self, tensor_list: NestedTensor):
         xs = self[0](tensor_list)
-        out = []
+        out: List[NestedTensor] = []
         pos = []
         for name, x in xs.items():
             out.append(x)

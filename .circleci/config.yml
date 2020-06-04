@@ -18,7 +18,8 @@ jobs:
       - checkout
       - run:
           command: |
-            pip install --user --progress-bar off torch torchvision scipy pytest
+            pip install --user --progress-bar off scipy pytest
+            pip install --user --progress-bar off --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             pytest .
 
 workflows:
