@@ -112,8 +112,15 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
         res = {target['image_id'].item(): output for target, output in zip(targets, results)}
         if coco_evaluator is not None:
             coco_evaluator.update(res)
+
         if panoptic_evaluator is not None:
-            res_pano = postprocessors["panoptic"](outputs, targets)
+            res_pano = postprocessors["panoptic"](outputs, target_sizes, orig_target_sizes)
+            for i, target in enumerate(targets):
+                image_id = target["image_id"].item()
+                file_name = f"{image_id:012d}.png"
+                res_pano[i]["image_id"] = image_id
+                res_pano[i]["file_name"] = file_name
+
             panoptic_evaluator.update(res_pano)
 
     # gather the stats from all processes
