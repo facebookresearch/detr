@@ -4,13 +4,54 @@ Plotting utilities to visualize training logs.
 """
 import torch
 import pandas as pd
-from pathlib import Path
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+from pathlib import Path, PurePath
+from typing import Iterable
+import copy
 
-def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col=0):
-    dfs = [pd.read_json(Path(p) / 'log.txt', lines=True) for p in logs]
+
+def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col=0, log_name='log.txt'):
+    
+    ''' 
+    Function to plot specific fields from training logs  
+    
+    :: Inputs - logs = list containing one or more directories, each with single log file (will convert to list if needed)
+              - fields = which training results to plot from log file
+              - ewm_col = ??
+              - log_name = optional, name for log file(s) if different than default 'log.txt'.
+              
+    :: Outputs - matplotlib plots of items in fields per each log file.
+               - solid lines are training results, dashed lines are test results.
+        
+    '''
+    
+    # verify logs is list, convert if not - handles single dir, etc.  *Should not have side-effects, new logs list is made 
+    
+    if not isinstance(logs, list):
+        if not isinstance(logs, Iterable):
+            logs = [logs]
+        else:
+            logs = copy.deepcopy(list(logs))
+        print(f"info only - plot_utils::plot_logs - logs argument expects list.")
+    
+    
+    
+    # verify valid dir(s)
+    
+    for i,dir in enumerate(logs):
+        if not isinstance(dir, PurePath):
+            dir = Path(dir)
+        if dir.exists():
+            continue
+        raise ValueError(f"plot_utils::plot_logs - invalid directory in logs argument:\n{Path(dir)}")
+        
+                
+            
+    # load log file(s) and plot
+    
+    dfs = [pd.read_json(Path(p) / log_name, lines=True) for p in logs]
 
     fig, axs = plt.subplots(ncols=len(fields), figsize=(16, 5))
 
