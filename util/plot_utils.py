@@ -11,7 +11,8 @@ from pathlib import Path, PurePath
 from typing import Iterable
 import copy
 
-def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col=0, log_name='log.txt'):  
+
+def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col=0, log_name='log.txt'):
     ''' 
     Function to plot specific fields from training logs     
     :: Inputs - logs = list containing one or more directories, each w/ single log file (convert to list if needed)
@@ -21,25 +22,25 @@ def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col
     :: Outputs - matplotlib plots of items in fields per each log file.
                - solid lines are training results, dashed lines are test results.       
     '''
-    
-    # verify logs is list, convert if not. handle single dir, etc. *Should not have side-effects, makes deep new logs     
+
+    # verify logs is list, convert if not. handle single dir, etc. *Should not have side-effects, makes deep new logs
     if not isinstance(logs, list):
         if not isinstance(logs, Iterable):
             logs = [logs]
         else:
             logs = copy.deepcopy(list(logs))
-        print(f"info only - plot_utils::plot_logs - logs argument expects list.")   
-    
-    
-    # verify valid dir(s)   
-    for i,dir in enumerate(logs):
+        print("info only - plot_utils::plot_logs - logs argument expects list, received.")
+
+    # verify valid dir(s)
+    for i, dir in enumerate(logs):
         if not isinstance(dir, PurePath):
             dir = Path(dir)
         if dir.exists():
             continue
-        raise ValueError(f"plot_utils::plot_logs - invalid directory in logs argument:\n{Path(dir)}")       
-                           
-    # load log file(s) and plot   
+        raise ValueError(
+            f"plot_utils::plot_logs - invalid directory in logs argument:\n{Path(dir)}")
+
+    # load log file(s) and plot
     dfs = [pd.read_json(Path(p) / log_name, lines=True) for p in logs]
 
     fig, axs = plt.subplots(ncols=len(fields), figsize=(16, 5))
@@ -47,7 +48,8 @@ def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col
     for df, color in zip(dfs, sns.color_palette(n_colors=len(logs))):
         for j, field in enumerate(fields):
             if field == 'mAP':
-                coco_eval = pd.DataFrame(pd.np.stack(df.test_coco_eval.dropna().values)[:, 1]).ewm(com=ewm_col).mean()
+                coco_eval = pd.DataFrame(pd.np.stack(df.test_coco_eval.dropna().values)[
+                                         :, 1]).ewm(com=ewm_col).mean()
                 axs[j].plot(coco_eval, c=color)
             else:
                 df.interpolate().ewm(com=ewm_col).mean().plot(
