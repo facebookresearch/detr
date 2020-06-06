@@ -14,11 +14,11 @@ import copy
 
 def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col=0, log_name='log.txt'):
     '''
-    Function to plot specific fields from training logs 
+    Function to plot specific fields from training logs
     :: Inputs - logs = list containing one or more directories, each w/ single log file (convert to list if needed)
               - fields = which training results to plot from log file
               - ewm_col = ??
-              - log_name = optional, name for log file(s) if different than default 'log.txt'            
+              - log_name = optional, name for log file(s) if different than default 'log.txt'
     :: Outputs - matplotlib plots of items in fields per each log file.
                - solid lines are training results, dashed lines are test results
     '''
@@ -95,3 +95,4 @@ def plot_precision_recall(files, naming_scheme='iter'):
     axs[1].set_title('Scores / Recall')
     axs[1].legend(names)
     return fig, axs
+    
