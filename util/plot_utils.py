@@ -11,7 +11,7 @@ from pathlib import Path, PurePath
 
 def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col=0, log_name='log.txt'):
     '''
-    Function to plot specific fields from training log(s). Plots both training and test results.  
+    Function to plot specific fields from training log(s). Plots both training and test results.
 
     :: Inputs - logs = list containing Path objects, each pointing to individual dir with a log file
               - fields = which results to plot from each log file - plots both training and test for each field.
