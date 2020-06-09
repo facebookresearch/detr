@@ -1,4 +1,3 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 """
 Plotting utilities to visualize training logs.
 """
@@ -8,37 +7,40 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from pathlib import Path, PurePath
-from typing import Iterable
-import copy
-
 
 def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col=0, log_name='log.txt'):
-    '''
-    Function to plot specific fields from training logs
-    :: Inputs - logs = list containing one or more directories, each w/ single log file (convert to list if needed)
-              - fields = which training results to plot from log file
-              - ewm_col = ??
-              - log_name = optional, name for log file(s) if different than default 'log.txt'
-    :: Outputs - matplotlib plots of items in fields per each log file.
-               - solid lines are training results, dashed lines are test results
-    '''
+    ''' 
+    Function to plot specific fields from training log(s). Plots both training and test results.  
 
-    # verify logs is list, convert if not. handle single dir, etc. *Should not have side-effects, makes deep new logs
+    :: Inputs - logs = list containing Path objects, each pointing to individual dir with a log file
+              - fields = which results to plot from each log file - plots both training and test for each field.
+              - ewm_col = optional, which column to use as the exponential weighted smoothing of the plots
+              - log_name = optional, name of log file if different than default 'log.txt'.
+
+    :: Outputs - matplotlib plots of results in fields, color coded for each log file.
+               - solid lines are training results, dashed lines are test results.
+
+    '''
+    func_name = "plot_utils.py::plot_logs"
+
+    # verify logs is a list of Paths (list[Paths]) or single Pathlib object Path,
+    # convert single Path to list to avoid 'not iterable' error
+
     if not isinstance(logs, list):
-        if not isinstance(logs, Iterable):
+        if isinstance(logs, PurePath):
             logs = [logs]
+            print(f"{func_name} info: logs param expects a list argument, converted to list[Path].")
         else:
-            logs = copy.deepcopy(list(logs))
-        print("info only - plot_utils::plot_logs - logs argument expects list, received.")
+            raise ValueError(f"{func_name} - invalid argument for logs parameter.\n \
+            Expect list[Path] or single Path obj, received {type(logs)}")
 
-    # verify valid dir(s)
+    # verify valid dir(s) and that every item in list is Path object
     for i, dir in enumerate(logs):
         if not isinstance(dir, PurePath):
-            dir = Path(dir)
+            raise ValueError(f"{func_name} - non-Path object in logs argument of {type(dir)}: \n{dir}")
         if dir.exists():
             continue
-        raise ValueError(
-            f"plot_utils::plot_logs - invalid directory in logs argument:\n{Path(dir)}")
+        raise ValueError(f"{func_name} - invalid directory in logs argument:\n{dir}")
 
     # load log file(s) and plot
     dfs = [pd.read_json(Path(p) / log_name, lines=True) for p in logs]
@@ -48,8 +50,7 @@ def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col
     for df, color in zip(dfs, sns.color_palette(n_colors=len(logs))):
         for j, field in enumerate(fields):
             if field == 'mAP':
-                coco_eval = pd.DataFrame(pd.np.stack(df.test_coco_eval.dropna().values)[
-                                         :, 1]).ewm(com=ewm_col).mean()
+                coco_eval = pd.DataFrame(pd.np.stack(df.test_coco_eval.dropna().values)[:, 1]).ewm(com=ewm_col).mean()
                 axs[j].plot(coco_eval, c=color)
             else:
                 df.interpolate().ewm(com=ewm_col).mean().plot(
