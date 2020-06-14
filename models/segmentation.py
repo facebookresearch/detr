@@ -155,7 +155,7 @@ class MHAttentionMap(nn.Module):
         nn.init.xavier_uniform_(self.q_linear.weight)
         self.normalize_fact = float(hidden_dim / self.num_heads) ** -0.5
 
-    def forward(self, q, k, mask: Optional[Tensor]=None):
+    def forward(self, q, k, mask: Optional[Tensor] = None):
         q = self.q_linear(q)
         k = F.conv2d(k, self.k_linear.weight.unsqueeze(-1).unsqueeze(-1), self.k_linear.bias)
         qh = q.view(q.shape[0], q.shape[1], self.num_heads, self.hidden_dim // self.num_heads)
