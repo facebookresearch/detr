@@ -45,7 +45,7 @@ with torchscript transformer.
       <td>500</td>
       <td>0.036</td>
       <td>42.0</td>
-      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth">download</a></td>
+      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth">model</a>&nbsp;|&nbsp;<a href="https://dl.fbaipublicfiles.com/detr/logs/detr-r50_log.txt">logs</a></td>
       <td>159Mb</td>
     </tr>
     <tr>
@@ -55,7 +55,7 @@ with torchscript transformer.
       <td>500</td>
       <td>0.083</td>
       <td>43.3</td>
-      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r50-dc5-f0fb7ef5.pth">download</a></td>
+      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r50-dc5-f0fb7ef5.pth">model</a>&nbsp;|&nbsp;<a href="https://dl.fbaipublicfiles.com/detr/logs/detr-r50-dc5_log.txt">logs</a></td>
       <td>159Mb</td>
     </tr>
     <tr>
@@ -65,7 +65,7 @@ with torchscript transformer.
       <td>500</td>
       <td>0.050</td>
       <td>43.5</td>
-      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r101-2c7b67e5.pth">download</a></td>
+      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r101-2c7b67e5.pth">model</a>&nbsp;|&nbsp;<a href="https://dl.fbaipublicfiles.com/detr/logs/detr-r101_log.txt">logs</a></td>
       <td>232Mb</td>
     </tr>
     <tr>
@@ -75,7 +75,7 @@ with torchscript transformer.
       <td>500</td>
       <td>0.097</td>
       <td>44.9</td>
-      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r101-dc5-a2e86def.pth">download</a></td>
+      <td><a href="https://dl.fbaipublicfiles.com/detr/detr-r101-dc5-a2e86def.pth">model</a>&nbsp;|&nbsp;<a href="https://dl.fbaipublicfiles.com/detr/logs/detr-r101-dc5_log.txt">logs</a></td>
       <td>232Mb</td>
     </tr>
   </tbody>
