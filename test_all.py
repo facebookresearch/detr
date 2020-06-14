@@ -8,7 +8,7 @@ from models.position_encoding import PositionEmbeddingSine, PositionEmbeddingLea
 from models.backbone import Backbone, Joiner, BackboneBase
 from util import box_ops
 from util.misc import nested_tensor_from_tensor_list
-from hubconf import detr_resnet50
+from hubconf import detr_resnet50, detr_resnet50_panoptic
 
 
 class Tester(unittest.TestCase):
@@ -59,7 +59,7 @@ class Tester(unittest.TestCase):
         backbone = Backbone('resnet50', True, False, False)
         torch.jit.script(backbone)  # noqa
 
-    def test_model_script(self):
+    def test_model_script_detection(self):
         model = detr_resnet50(pretrained=False).eval()
         scripted_model = torch.jit.script(model)
         x = nested_tensor_from_tensor_list([torch.rand(3, 200, 200), torch.rand(3, 200, 250)])
@@ -67,6 +67,16 @@ class Tester(unittest.TestCase):
         out_script = scripted_model(x)
         self.assertTrue(out["pred_logits"].equal(out_script["pred_logits"]))
         self.assertTrue(out["pred_boxes"].equal(out_script["pred_boxes"]))
+
+    def test_model_script_panoptic(self):
+        model = detr_resnet50_panoptic(pretrained=False).eval()
+        scripted_model = torch.jit.script(model)
+        x = nested_tensor_from_tensor_list([torch.rand(3, 200, 200), torch.rand(3, 200, 250)])
+        out = model(x)
+        out_script = scripted_model(x)
+        self.assertTrue(out["pred_logits"].equal(out_script["pred_logits"]))
+        self.assertTrue(out["pred_boxes"].equal(out_script["pred_boxes"]))
+        self.assertTrue(out["pred_masks"].equal(out_script["pred_masks"]))
 
 
 if __name__ == '__main__':
