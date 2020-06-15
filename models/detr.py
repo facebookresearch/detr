@@ -20,6 +20,7 @@ from .transformer import build_transformer
 
 class DETR(nn.Module):
     """ This is the DETR module that performs object detection """
+
     def __init__(self, backbone, transformer, num_classes, num_queries, aux_loss=False):
         """ Initializes the model.
         Parameters:
@@ -86,6 +87,7 @@ class SetCriterion(nn.Module):
         1) we compute hungarian assignment between ground truth boxes and the outputs of the model
         2) we supervise each pair of matched ground-truth / prediction (supervise class and box)
     """
+
     def __init__(self, num_classes, matcher, weight_dict, eos_coef, losses):
         """ Create the criterion.
         Parameters:
@@ -302,9 +304,28 @@ class MLP(nn.Module):
 
 
 def build(args):
-    num_classes = 20 if args.dataset_file != 'coco' else 91
-    if args.dataset_file == "coco_panoptic":
+    '''
+    Builds a DETR model and supporting criterion and postprocessor
+
+    Inputs: args (from main.py)
+
+    Outputs:  - model = DETR detection model
+              - criterion = loss evaluations for bboxes, labels, cardinality
+              - postprocessor = for bbox and optionally segmentation
+
+    '''
+    try:
+        num_classes = args.num_classes
+    except:
+        num_classes = 20  # default to 20 for backwards compat if missing args.num_classes
+
+    # over-ride num_classes for known datasets:
+    if args.dataset_file == 'coco':
+        num_classes = 91
+
+    if args.dataset_file == 'coco_panoptic':
         num_classes = 250
+
     device = torch.device(args.device)
 
     backbone = build_backbone(args)

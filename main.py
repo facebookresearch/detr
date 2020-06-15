@@ -29,8 +29,11 @@ def get_args_parser():
                         help='gradient clipping max norm')
 
     # Model parameters
+    parser.add_argument('--num_classes', type=int, default=20,
+                        help="Number of classes in your dataset. Overridden by coco and coco_panoptic datasets")
     parser.add_argument('--frozen_weights', type=str, default=None,
                         help="Path to the pretrained model. If set, only the mask head will be trained")
+                        
     # * Backbone
     parser.add_argument('--backbone', default='resnet50', type=str,
                         help="Name of the convolutional backbone to use")
