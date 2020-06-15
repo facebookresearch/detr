@@ -316,7 +316,7 @@ def build(args):
     '''
     try:
         num_classes = args.num_classes
-    except:
+    except AttributeError:
         num_classes = 20  # default to 20 for backwards compat if missing args.num_classes
 
     # over-ride num_classes for known datasets:
