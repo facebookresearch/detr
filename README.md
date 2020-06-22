@@ -137,7 +137,9 @@ COCO panoptic val5k models:
     </tr>
   </tbody>
 </table>
-Checkout our [panoptic colab](https://colab.research.google.com/github/facebookresearch/detr/blob/colab/notebooks/DETR_panoptic.ipynb) to see how to use and visualize DETR's panoptic segmentation prediction.
+
+Checkout our [panoptic colab](https://colab.research.google.com/github/facebookresearch/detr/blob/colab/notebooks/DETR_panoptic.ipynb)
+to see how to use and visualize DETR's panoptic segmentation prediction.
 
 
 # Usage - Object detection
