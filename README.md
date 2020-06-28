@@ -17,6 +17,8 @@ Training code follows this idea - it is not a library,
 but simply a [main.py](main.py) importing model and criterion
 definitions with standard training loops.
 
+Additionnally, we provide a Detectron2 wrapper in the d2/ folder. See the readme there for more information.
+
 For details see [End-to-End Object Detection with Transformers](https://ai.facebook.com/research/publications/end-to-end-object-detection-with-transformers) by Nicolas Carion, Francisco Massa, Gabriel Synnaeve, Nicolas Usunier, Alexander Kirillov, and Sergey Zagoruyko.
 
 # Model Zoo
