@@ -23,7 +23,6 @@ def add_detr_config(cfg):
     cfg.MODEL.DETR.ENC_LAYERS = 6
     cfg.MODEL.DETR.DEC_LAYERS = 6
     cfg.MODEL.DETR.PRE_NORM = False
-    cfg.MODEL.DETR.PASS_POS_AND_QUERY = True
 
     cfg.MODEL.DETR.HIDDEN_DIM = 256
     cfg.MODEL.DETR.NUM_OBJECT_QUERIES = 100
