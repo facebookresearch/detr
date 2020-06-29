@@ -85,7 +85,6 @@ class Detr(nn.Module):
         enc_layers = cfg.MODEL.DETR.ENC_LAYERS
         dec_layers = cfg.MODEL.DETR.DEC_LAYERS
         pre_norm = cfg.MODEL.DETR.PRE_NORM
-        pass_pos_and_query = cfg.MODEL.DETR.PASS_POS_AND_QUERY
 
         # Loss parameters:
         giou_weight = cfg.MODEL.DETR.GIOU_WEIGHT
@@ -107,7 +106,6 @@ class Detr(nn.Module):
             num_decoder_layers=dec_layers,
             normalize_before=pre_norm,
             return_intermediate_dec=deep_supervision,
-            pass_pos_and_query=pass_pos_and_query,
         )
 
         self.detr = DETR(
