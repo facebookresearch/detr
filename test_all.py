@@ -78,6 +78,21 @@ class Tester(unittest.TestCase):
         self.assertTrue(out["pred_boxes"].equal(out_script["pred_boxes"]))
         self.assertTrue(out["pred_masks"].equal(out_script["pred_masks"]))
 
+    def test_model_detection_different_inputs(self):
+        model = detr_resnet50(pretrained=False).eval()
+        # support NestedTensor
+        x = nested_tensor_from_tensor_list([torch.rand(3, 200, 200), torch.rand(3, 200, 250)])
+        out = model(x)
+        self.assertIn('pred_logits', out)
+        # and 4d Tensor
+        x = torch.rand(1, 3, 200, 200)
+        out = model(x)
+        self.assertIn('pred_logits', out)
+        # and List[Tensor[C, H, W]]
+        x = torch.rand(3, 200, 200)
+        out = model([x])
+        self.assertIn('pred_logits', out)
+
 
 if __name__ == '__main__':
     unittest.main()
