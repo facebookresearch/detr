@@ -37,12 +37,21 @@ class MaskedBackbone(nn.Module):
         self.num_channels = backbone_shape[list(backbone_shape.keys())[-1]].channels
 
     def forward(self, images):
-        features = self.backbone(images.tensors)
-        masks = self.mask_out_padding(
-            [features_per_level.shape for features_per_level in features.values()],
-            images.image_sizes,
-            images.tensor.device,
-        )
+        if type(images) == NestedTensor:
+            features = self.backbone(images.tensors)
+            image_sizes = [tuple(im.shape[-2:]) for im in images.tensors]
+            masks = self.mask_out_padding(
+                [features_per_level.shape for features_per_level in features.values()],
+                image_sizes,
+                images.tensors.device,
+            )
+        else:
+            features = self.backbone(images.tensor)
+            masks = self.mask_out_padding(
+                [features_per_level.shape for features_per_level in features.values()],
+                images.image_sizes,
+                images.tensor.device,
+            )
         assert len(features) == len(masks)
         for i, k in enumerate(features.keys()):
             features[k] = NestedTensor(features[k], masks[i])
