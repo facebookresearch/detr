@@ -119,7 +119,7 @@ def detr_resnet50_panoptic(
 
 
 def detr_resnet50_dc5_panoptic(
-    pretrained=False, num_classes=91, threshold=0.85, return_postprocessor=False
+    pretrained=False, num_classes=250, threshold=0.85, return_postprocessor=False
 ):
     """
     DETR-DC5 R50 with 6 encoder and 6 decoder layers.
@@ -145,7 +145,7 @@ def detr_resnet50_dc5_panoptic(
 
 
 def detr_resnet101_panoptic(
-    pretrained=False, num_classes=91, threshold=0.85, return_postprocessor=False
+    pretrained=False, num_classes=250, threshold=0.85, return_postprocessor=False
 ):
     """
     DETR-DC5 R101 with 6 encoder and 6 decoder layers.
