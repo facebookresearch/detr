@@ -22,4 +22,7 @@ def build_dataset(image_set, args):
         # to avoid making panopticapi required for coco
         from .coco_panoptic import build as build_coco_panoptic
         return build_coco_panoptic(image_set, args)
+    if args.dataset_file == 'custom':
+        from .custom import build as build_custom
+        return build_custom(image_set, args)
     raise ValueError(f'dataset {args.dataset_file} not supported')
