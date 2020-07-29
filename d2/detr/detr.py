@@ -12,7 +12,7 @@ from torch import nn
 
 from detectron2.layers import ShapeSpec
 from detectron2.modeling import META_ARCH_REGISTRY, build_backbone, detector_postprocess
-from detectron2.structures import Boxes, ImageList, Instances
+from detectron2.structures import Boxes, ImageList, Instances, BitMasks, PolygonMasks
 from detectron2.utils.logger import log_first_n
 from fvcore.nn import giou_loss, smooth_l1_loss
 from models.backbone import Joiner
@@ -20,6 +20,7 @@ from models.detr import DETR, SetCriterion
 from models.matcher import HungarianMatcher
 from models.position_encoding import PositionEmbeddingSine
 from models.transformer import Transformer
+from models.segmentation import DETRsegm, PostProcessPanoptic, PostProcessSegm
 from util.box_ops import box_cxcywh_to_xyxy, box_xyxy_to_cxcywh
 from util.misc import NestedTensor
 
@@ -76,6 +77,7 @@ class Detr(nn.Module):
         self.device = torch.device(cfg.MODEL.DEVICE)
 
         self.num_classes = cfg.MODEL.DETR.NUM_CLASSES
+        self.mask_on = cfg.MODEL.MASK_ON
         hidden_dim = cfg.MODEL.DETR.HIDDEN_DIM
         num_queries = cfg.MODEL.DETR.NUM_OBJECT_QUERIES
         # Transformer parameters:
@@ -111,6 +113,23 @@ class Detr(nn.Module):
         self.detr = DETR(
             backbone, transformer, num_classes=self.num_classes, num_queries=num_queries, aux_loss=deep_supervision
         )
+        if self.mask_on:
+            frozen_weights = cfg.MODEL.DETR.FROZEN_WEIGHTS
+            if frozen_weights != '':
+                print("LOAD pre-trained weights")
+                weight = torch.load(frozen_weights, map_location=lambda storage, loc: storage)['model']
+                new_weight = {}
+                for k, v in weight.items():
+                    if 'detr.' in k:
+                        new_weight[k.replace('detr.','')] = v
+                    else:
+                        print(k)
+                del weight
+                self.detr.load_state_dict(new_weight)
+                del new_weight
+            self.detr = DETRsegm(self.detr, freeze_detr=frozen_weights!='')
+            self.seg_postprocess = PostProcessSegm
+
         self.detr.to(self.device)
 
         # building criterion
@@ -123,8 +142,11 @@ class Detr(nn.Module):
                 aux_weight_dict.update({k + f"_{i}": v for k, v in weight_dict.items()})
             weight_dict.update(aux_weight_dict)
         losses = ["labels", "boxes", "cardinality"]
+        if self.mask_on:
+            losses += ["masks"]
         self.criterion = SetCriterion(
-            self.num_classes, matcher=matcher, weight_dict=weight_dict, eos_coef=no_object_weight, losses=losses
+            self.num_classes, matcher=matcher, weight_dict=weight_dict, eos_coef=no_object_weight, losses=losses,
+            is_detectron=True
         )
         self.criterion.to(self.device)
 
@@ -167,7 +189,8 @@ class Detr(nn.Module):
         else:
             box_cls = output["pred_logits"]
             box_pred = output["pred_boxes"]
-            results = self.inference(box_cls, box_pred, images.image_sizes)
+            mask_pred = output["pred_masks"] if self.mask_on else None
+            results = self.inference(box_cls, box_pred, mask_pred, images.image_sizes)
             processed_results = []
             for results_per_image, input_per_image, image_size in zip(results, batched_inputs, images.image_sizes):
                 height = input_per_image.get("height", image_size[0])
@@ -185,9 +208,12 @@ class Detr(nn.Module):
             gt_boxes = targets_per_image.gt_boxes.tensor / image_size_xyxy
             gt_boxes = box_xyxy_to_cxcywh(gt_boxes)
             new_targets.append({"labels": gt_classes, "boxes": gt_boxes})
+            if self.mask_on and hasattr(targets_per_image, 'gt_masks'):
+                gt_masks = targets_per_image.gt_masks
+                new_targets[-1].update({'masks': gt_masks, 'size': (h,w)})
         return new_targets
 
-    def inference(self, box_cls, box_pred, image_sizes):
+    def inference(self, box_cls, box_pred, mask_pred, image_sizes):
         """
         Arguments:
             box_cls (Tensor): tensor of shape (batch_size, num_queries, K).
@@ -206,13 +232,19 @@ class Detr(nn.Module):
         # For each box we assign the best class or the second best if the best on is `no_object`.
         scores, labels = F.softmax(box_cls, dim=-1)[:, :, :-1].max(-1)
 
-        for scores_per_image, labels_per_image, box_pred_per_image, image_size in zip(
+        for i, (scores_per_image, labels_per_image, box_pred_per_image, image_size) in enumerate(zip(
             scores, labels, box_pred, image_sizes
-        ):
+        )):
             result = Instances(image_size)
             result.pred_boxes = Boxes(box_cxcywh_to_xyxy(box_pred_per_image))
 
             result.pred_boxes.scale(scale_x=image_size[1], scale_y=image_size[0])
+            if self.mask_on:
+                mask= F.interpolate(mask_pred[i].unsqueeze(0), size=image_size, mode='bilinear', align_corners=False)
+                mask= mask[0].sigmoid() > 0.5
+                B, N, H, W = mask_pred.shape
+                mask = BitMasks(mask.cpu()).crop_and_resize(result.pred_boxes.tensor.cpu() ,32)
+                result.pred_masks = mask.unsqueeze(1).to(mask_pred[0].device)
 
             result.scores = scores_per_image
             result.pred_classes = labels_per_image

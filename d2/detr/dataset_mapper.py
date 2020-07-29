@@ -61,8 +61,8 @@ class DetrDatasetMapper:
         else:
             self.crop_gen = None
 
-        assert not cfg.MODEL.MASK_ON, "Mask is not supported"
 
+        self.mask_on = cfg.MODEL.MASK_ON
         self.tfm_gens = build_transform_gen(cfg, is_train)
         logging.getLogger(__name__).info(
             "Full TransformGens used in training: {}, crop: {}".format(str(self.tfm_gens), str(self.crop_gen))
@@ -108,7 +108,8 @@ class DetrDatasetMapper:
         if "annotations" in dataset_dict:
             # USER: Modify this if you want to keep them for some reason.
             for anno in dataset_dict["annotations"]:
-                anno.pop("segmentation", None)
+                if not self.mask_on:
+                    anno.pop("segmentation", None)
                 anno.pop("keypoints", None)
 
             # USER: Implement additional transformations if you have other types of data

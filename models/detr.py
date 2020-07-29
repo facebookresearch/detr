@@ -16,6 +16,7 @@ from .matcher import build_matcher
 from .segmentation import (DETRsegm, PostProcessPanoptic, PostProcessSegm,
                            dice_loss, sigmoid_focal_loss)
 from .transformer import build_transformer
+from detectron2.structures.masks import polygons_to_bitmask
 
 
 class DETR(nn.Module):
@@ -86,7 +87,8 @@ class SetCriterion(nn.Module):
         1) we compute hungarian assignment between ground truth boxes and the outputs of the model
         2) we supervise each pair of matched ground-truth / prediction (supervise class and box)
     """
-    def __init__(self, num_classes, matcher, weight_dict, eos_coef, losses):
+    def __init__(self, num_classes, matcher, weight_dict, eos_coef, losses,
+            is_detectron=False):
         """ Create the criterion.
         Parameters:
             num_classes: number of object categories, omitting the special no-object category
@@ -101,6 +103,7 @@ class SetCriterion(nn.Module):
         self.weight_dict = weight_dict
         self.eos_coef = eos_coef
         self.losses = losses
+        self.is_detectron = is_detectron
         empty_weight = torch.ones(self.num_classes + 1)
         empty_weight[-1] = self.eos_coef
         self.register_buffer('empty_weight', empty_weight)
@@ -161,6 +164,23 @@ class SetCriterion(nn.Module):
         losses['loss_giou'] = loss_giou.sum() / num_boxes
         return losses
 
+    def convert_polygon2mask(self, targets, size, indices):
+        masks = []
+        b, m = indices
+        for i in range(len(b)):
+            t = targets[b[i]]
+            h,w = t["size"]
+            polygon = t["masks"].polygons[m[i]]
+            for p in polygon:
+                p[0::2] *= (size[1] / w)
+                p[1::2] *= (size[0] / h)
+            masks.append(polygons_to_bitmask(polygon, size[0], size[1]))
+        masks = torch.tensor(masks)
+        if len(masks.shape) != 3:
+            masks = masks.unsqueeze(0)
+        return masks
+
+
     def loss_masks(self, outputs, targets, indices, num_boxes):
         """Compute the losses related to the masks: the focal loss and the dice loss.
            targets dicts must contain the key "masks" containing a tensor of dim [nb_target_boxes, h, w]
@@ -169,21 +189,26 @@ class SetCriterion(nn.Module):
 
         src_idx = self._get_src_permutation_idx(indices)
         tgt_idx = self._get_tgt_permutation_idx(indices)
-
         src_masks = outputs["pred_masks"]
-
-        # TODO use valid to mask invalid areas due to padding in loss
-        target_masks, valid = nested_tensor_from_tensor_list([t["masks"] for t in targets]).decompose()
-        target_masks = target_masks.to(src_masks)
-
         src_masks = src_masks[src_idx]
+        if self.is_detectron:
+            target_masks = self.convert_polygon2mask(targets, src_masks.shape[-2:],
+                                              tgt_idx)
+            target_masks = target_masks.to(src_masks)
+        else:
+            masks = [t["masks"] for t in targets]
+            # TODO use valid to mask invalid areas due to padding in loss
+            target_masks, valid = nested_tensor_from_tensor_list(masks).decompose()
+            target_masks = target_masks.to(src_masks)
+            target_masks = target_masks[tgt_idx]
+
         # upsample predictions to the target size
         src_masks = interpolate(src_masks[:, None], size=target_masks.shape[-2:],
                                 mode="bilinear", align_corners=False)
         src_masks = src_masks[:, 0].flatten(1)
 
-        target_masks = target_masks[tgt_idx].flatten(1)
-
+        target_masks = target_masks.flatten(1)
+        target_masks = target_masks.view(src_masks.shape)
         losses = {
             "loss_mask": sigmoid_focal_loss(src_masks, target_masks, num_boxes),
             "loss_dice": dice_loss(src_masks, target_masks, num_boxes),
