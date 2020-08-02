@@ -155,7 +155,7 @@ class ONNXExporterTester(unittest.TestCase):
                 else:
                     raise
 
-    def test_onnx_detection(self):
+    def test_model_onnx_detection(self):
         model = detr_resnet50(pretrained=False).eval()
         dummy_image = torch.ones(1, 3, 800, 800) * 0.3
         model(dummy_image)
@@ -166,7 +166,20 @@ class ONNXExporterTester(unittest.TestCase):
             [(torch.rand(1, 3, 750, 800),)],
             input_names=["inputs"],
             output_names=["pred_logits", "pred_boxes"],
-            # dynamic_axes={"inputs": [0, 1, 2, 3], "outputs": [0, 1, 2, 3]},
+            tolerate_small_mismatch=True,
+        )
+
+    def test_model_onnx_panoptic(self):
+        model = detr_resnet50_panoptic(pretrained=False).eval()
+        dummy_image = torch.ones(1, 3, 800, 800) * 0.3
+        model(dummy_image)
+
+        # Test exported model on images of different size, or dummy input
+        self.run_model(
+            model,
+            [(torch.rand(1, 3, 750, 800),)],
+            input_names=["inputs"],
+            output_names=["pred_logits", "pred_boxes", "pred_masks"],
             tolerate_small_mismatch=True,
         )
 
