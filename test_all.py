@@ -17,8 +17,6 @@ try:
 except ImportError:
     onnxruntime = None
 
-from torchvision.ops._register_onnx_ops import _onnx_opset_version
-
 
 class Tester(unittest.TestCase):
 
@@ -116,7 +114,7 @@ class ONNXExporterTester(unittest.TestCase):
         onnx_io = io.BytesIO()
         # export to onnx with the first input
         torch.onnx.export(model, inputs_list[0], onnx_io,
-                          do_constant_folding=do_constant_folding, opset_version=_onnx_opset_version,
+                          do_constant_folding=do_constant_folding, opset_version=12,
                           dynamic_axes=dynamic_axes, input_names=input_names, output_names=output_names)
         # validate the exported model with onnx runtime
         for test_inputs in inputs_list:
