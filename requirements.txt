@@ -5,3 +5,5 @@ torch>=1.5.0
 torchvision>=0.6.0
 git+https://github.com/cocodataset/panopticapi.git#egg=panopticapi
 scipy
+onnx
+onnxruntime
