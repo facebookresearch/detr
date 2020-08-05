@@ -166,7 +166,7 @@ class ONNXExporterTester(unittest.TestCase):
             output_names=["pred_logits", "pred_boxes"],
             tolerate_small_mismatch=True,
         )
-        
+
     def test_model_onnx_detection_panoptic(self):
         model = detr_resnet50_panoptic(pretrained=False).eval()
         dummy_image = torch.ones(1, 3, 800, 800) * 0.3
