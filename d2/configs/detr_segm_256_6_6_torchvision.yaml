@@ -12,7 +12,7 @@ MODEL:
     GIOU_WEIGHT: 2.0
     L1_WEIGHT: 5.0
     NUM_OBJECT_QUERIES: 100
-    FRONZEN_WEIGHTS: ''
+    FROZEN_WEIGHTS: ''
 DATASETS:
   TRAIN: ("coco_2017_train",)
   TEST: ("coco_2017_val",)
