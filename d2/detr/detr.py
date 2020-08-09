@@ -23,6 +23,7 @@ from models.transformer import Transformer
 from models.segmentation import DETRsegm, PostProcessPanoptic, PostProcessSegm
 from util.box_ops import box_cxcywh_to_xyxy, box_xyxy_to_cxcywh
 from util.misc import NestedTensor
+from datasets.coco import convert_coco_poly_to_mask
 
 __all__ = ["Detr"]
 
@@ -146,7 +147,6 @@ class Detr(nn.Module):
             losses += ["masks"]
         self.criterion = SetCriterion(
             self.num_classes, matcher=matcher, weight_dict=weight_dict, eos_coef=no_object_weight, losses=losses,
-            is_detectron=True
         )
         self.criterion.to(self.device)
 
@@ -199,6 +199,7 @@ class Detr(nn.Module):
                 processed_results.append({"instances": r})
             return processed_results
 
+
     def prepare_targets(self, targets):
         new_targets = []
         for targets_per_image in targets:
@@ -210,7 +211,8 @@ class Detr(nn.Module):
             new_targets.append({"labels": gt_classes, "boxes": gt_boxes})
             if self.mask_on and hasattr(targets_per_image, 'gt_masks'):
                 gt_masks = targets_per_image.gt_masks
-                new_targets[-1].update({'masks': gt_masks, 'size': (h,w)})
+                gt_masks = convert_coco_poly_to_mask(gt_masks.polygons, h, w)
+                new_targets[-1].update({'masks': gt_masks})
         return new_targets
 
     def inference(self, box_cls, box_pred, mask_pred, image_sizes):
