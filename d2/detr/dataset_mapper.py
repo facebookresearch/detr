@@ -61,7 +61,6 @@ class DetrDatasetMapper:
         else:
             self.crop_gen = None
 
-
         self.mask_on = cfg.MODEL.MASK_ON
         self.tfm_gens = build_transform_gen(cfg, is_train)
         logging.getLogger(__name__).info(

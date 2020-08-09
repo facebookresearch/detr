@@ -122,13 +122,13 @@ class Detr(nn.Module):
                 new_weight = {}
                 for k, v in weight.items():
                     if 'detr.' in k:
-                        new_weight[k.replace('detr.','')] = v
+                        new_weight[k.replace('detr.', '')] = v
                     else:
                         print(k)
                 del weight
                 self.detr.load_state_dict(new_weight)
                 del new_weight
-            self.detr = DETRsegm(self.detr, freeze_detr=frozen_weights!='')
+            self.detr = DETRsegm(self.detr, freeze_detr=(frozen_weights != ''))
             self.seg_postprocess = PostProcessSegm
 
         self.detr.to(self.device)
@@ -199,7 +199,6 @@ class Detr(nn.Module):
                 processed_results.append({"instances": r})
             return processed_results
 
-
     def prepare_targets(self, targets):
         new_targets = []
         for targets_per_image in targets:
@@ -242,10 +241,10 @@ class Detr(nn.Module):
 
             result.pred_boxes.scale(scale_x=image_size[1], scale_y=image_size[0])
             if self.mask_on:
-                mask= F.interpolate(mask_pred[i].unsqueeze(0), size=image_size, mode='bilinear', align_corners=False)
-                mask= mask[0].sigmoid() > 0.5
+                mask = F.interpolate(mask_pred[i].unsqueeze(0), size=image_size, mode='bilinear', align_corners=False)
+                mask = mask[0].sigmoid() > 0.5
                 B, N, H, W = mask_pred.shape
-                mask = BitMasks(mask.cpu()).crop_and_resize(result.pred_boxes.tensor.cpu() ,32)
+                mask = BitMasks(mask.cpu()).crop_and_resize(result.pred_boxes.tensor.cpu(), 32)
                 result.pred_masks = mask.unsqueeze(1).to(mask_pred[0].device)
 
             result.scores = scores_per_image
