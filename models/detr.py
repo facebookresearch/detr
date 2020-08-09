@@ -16,7 +16,6 @@ from .matcher import build_matcher
 from .segmentation import (DETRsegm, PostProcessPanoptic, PostProcessSegm,
                            dice_loss, sigmoid_focal_loss)
 from .transformer import build_transformer
-from detectron2.structures.masks import polygons_to_bitmask
 
 
 class DETR(nn.Module):
