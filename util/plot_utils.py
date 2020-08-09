@@ -5,6 +5,7 @@ import torch
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import numpy as np
 
 from pathlib import Path, PurePath
 
@@ -43,6 +44,15 @@ def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col
             continue
         raise ValueError(f"{func_name} - invalid directory in logs argument:\n{dir}")
 
+    # check if first log file exists...it will not be present until after epoch 1.
+    fn = Path(logs[0]/log_name)
+    
+    if not fn.exists():
+        print(f"-> missing {log_name} in first directory.  Have you gotten to Epoch 1 in training?")
+        print(f"--> file path: {fn}")
+        return
+
+
     # load log file(s) and plot
     dfs = [pd.read_json(Path(p) / log_name, lines=True) for p in logs]
 
@@ -52,7 +62,7 @@ def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col
         for j, field in enumerate(fields):
             if field == 'mAP':
                 coco_eval = pd.DataFrame(
-                    pd.np.stack(df.test_coco_eval_bbox.dropna().values)[:, 1]
+                    np.stack(df.test_coco_eval_bbox.dropna().values)[:, 1]
                 ).ewm(com=ewm_col).mean()
                 axs[j].plot(coco_eval, c=color)
             else:
