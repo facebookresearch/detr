@@ -41,14 +41,14 @@ def plot_logs(logs, fields=('class_error', 'loss_bbox_unscaled', 'mAP'), ewm_col
         if not isinstance(dir, PurePath):
             raise ValueError(f"{func_name} - non-Path object in logs argument of {type(dir)}: \n{dir}")
         if not dir.exists():
-            raise ValueError(f"{func_name} - invalid directory in logs argument:\n{dir}")          
+            raise ValueError(f"{func_name} - invalid directory in logs argument:\n{dir}")
         # verify log_name exists
         fn = Path(dir / log_name)
         if not fn.exists():
             print(f"-> missing {log_name}.  Have you gotten to Epoch 1 in training?")
             print(f"--> full path of missing log file: {fn}")
             return
-        
+
     # load log file(s) and plot
     dfs = [pd.read_json(Path(p) / log_name, lines=True) for p in logs]
 
