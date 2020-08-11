@@ -124,7 +124,7 @@ class Detr(nn.Module):
                     if 'detr.' in k:
                         new_weight[k.replace('detr.', '')] = v
                     else:
-                        print(k)
+                        print(f"Skipping loading weight {k} from frozen model")
                 del weight
                 self.detr.load_state_dict(new_weight)
                 del new_weight
