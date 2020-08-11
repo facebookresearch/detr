@@ -35,7 +35,7 @@ class DETRsegm(nn.Module):
         self.mask_head = MaskHeadSmallConv(hidden_dim + nheads, [1024, 512, 256], hidden_dim)
 
     def forward(self, samples: NestedTensor):
-        if not isinstance(samples, NestedTensor):
+        if isinstance(samples, (list, torch.Tensor)):
             samples = nested_tensor_from_tensor_list(samples)
         features, pos = self.detr.backbone(samples)
 
