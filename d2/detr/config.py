@@ -10,6 +10,9 @@ def add_detr_config(cfg):
     cfg.MODEL.DETR = CN()
     cfg.MODEL.DETR.NUM_CLASSES = 80
 
+    # For Segmentation
+    cfg.MODEL.DETR.FROZEN_WEIGHTS = ''
+
     # LOSS
     cfg.MODEL.DETR.GIOU_WEIGHT = 2.0
     cfg.MODEL.DETR.L1_WEIGHT = 5.0

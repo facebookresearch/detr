@@ -32,3 +32,8 @@ To train DETR on a single node with 8 gpus, simply use:
 ```
 python train_net.py --config configs/detr_256_6_6_torchvision.yaml --num-gpus 8
 ```
+
+To fine-tune DETR for instance segmentation on a single node with 8 gpus, simply use:
+```
+python train_net.py --config configs/detr_segm_256_6_6_torchvision.yaml --num-gpus 8 MODEL.DETR.FROZEN_WEIGHTS <model_path>
+```
