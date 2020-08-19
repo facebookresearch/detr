@@ -167,6 +167,21 @@ class ONNXExporterTester(unittest.TestCase):
             tolerate_small_mismatch=True,
         )
 
+    @unittest.skip("CI doesn't have enough memory")
+    def test_model_onnx_detection_panoptic(self):
+        model = detr_resnet50_panoptic(pretrained=False).eval()
+        dummy_image = torch.ones(1, 3, 800, 800) * 0.3
+        model(dummy_image)
+
+        # Test exported model on images of different size, or dummy input
+        self.run_model(
+            model,
+            [(torch.rand(1, 3, 750, 800),)],
+            input_names=["inputs"],
+            output_names=["pred_logits", "pred_boxes", "pred_masks"],
+            tolerate_small_mismatch=True,
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
