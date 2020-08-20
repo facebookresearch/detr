@@ -319,6 +319,10 @@ def build(args):
         # "You should always use num_classes = max_id + 1 where max_id is the highest class ID that you have in your dataset."
         # Reference: https://github.com/facebookresearch/detr/issues/108#issuecomment-650269223
         num_classes = 2
+    num_classes_specified_at_run_time = args.num_classes
+    if num_classes_specified_at_run_time is not None:
+        # Override the value hard-coded in this file with the value specified at run-time
+        num_classes = num_classes_specified_at_run_time
     device = torch.device(args.device)
 
     backbone = build_backbone(args)
