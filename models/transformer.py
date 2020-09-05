@@ -3,6 +3,8 @@
 DETR Transformer class.
 
 Copy-paste from torch.nn.Transformer with modifications:
+    * encoder self-attention mask is modified to dismiss invalid(zero-padded) pixels
+    as both query and key (previous: only mask invalid pixels when used as keys)
     * positional encodings are passed in MHattention
     * extra LN at the end of encoder is removed
     * decoder returns a stack of activations from all decoding layers
@@ -52,8 +54,12 @@ class Transformer(nn.Module):
         query_embed = query_embed.unsqueeze(1).repeat(1, bs, 1)
         mask = mask.flatten(1)
 
+        # (bs, HW) to (bs * self.n_head, HW, HW)
+        attn_mask = torch.logical_or(
+            mask.unsqueeze(1), mask.unsqueeze(2)).expand(self.nhead, -1, -1)
+
         tgt = torch.zeros_like(query_embed)
-        memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
+        memory = self.encoder(src, mask=attn_mask, pos=pos_embed)
         hs = self.decoder(tgt, memory, memory_key_padding_mask=mask,
                           pos=pos_embed, query_pos=query_embed)
         return hs.transpose(1, 2), memory.permute(1, 2, 0).view(bs, c, h, w)
