@@ -198,7 +198,7 @@ To ease reproduction of our results we provide
 for 150 epoch schedule (3 days on a single machine), achieving 39.5/60.3 AP/AP50.
 
 We train DETR with AdamW setting learning rate in the transformer to 1e-4 and 1e-5 in the backbone.
-Horizontal flips, scales an crops are used for augmentation.
+Horizontal flips, scales and crops are used for augmentation.
 Images are rescaled to have min size 800 and max size 1333.
 The transformer is trained with dropout of 0.1, and the whole model is trained with grad clip of 0.1.
 
