@@ -3,6 +3,8 @@ import io
 import unittest
 
 import torch
+from torch import nn, Tensor
+from typing import List
 
 from models.matcher import HungarianMatcher
 from models.position_encoding import PositionEmbeddingSine, PositionEmbeddingLearned
@@ -99,6 +101,26 @@ class Tester(unittest.TestCase):
         x = torch.rand(3, 200, 200)
         out = model([x])
         self.assertIn('pred_logits', out)
+
+    def test_warpped_model_script_detection(self):
+        class WrappedDETR(nn.Module):
+            def __init__(self, model):
+                super().__init__()
+                self.model = model
+
+            def forward(self, inputs: List[Tensor]):
+                sample = nested_tensor_from_tensor_list(inputs)
+                return self.model(sample)
+
+        model = detr_resnet50(pretrained=False)
+        wrapped_model = WrappedDETR(model)
+        wrapped_model.eval()
+        scripted_model = torch.jit.script(wrapped_model)
+        x = [torch.rand(3, 200, 200), torch.rand(3, 200, 250)]
+        out = wrapped_model(x)
+        out_script = scripted_model(x)
+        self.assertTrue(out["pred_logits"].equal(out_script["pred_logits"]))
+        self.assertTrue(out["pred_boxes"].equal(out_script["pred_boxes"]))
 
 
 @unittest.skipIf(onnxruntime is None, 'ONNX Runtime unavailable')
