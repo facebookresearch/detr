@@ -1,3 +1,13 @@
+# Fridge-food-types
+Multi-detection among 50 different food types
+Wordpress Site: https://fellowshipai.wordpress.com/fridge-object-detection/  
+
+This repo includes a fork of FB AI's DETR in order to track changes made to the framework in order to train on a custom dataset.   
+
+
+
+
+#### DETR ReadMe untouched below 
 **DE⫶TR**: End-to-End Object Detection with Transformers
 ========
 PyTorch training code and pretrained models for **DETR** (**DE**tection **TR**ansformer).
