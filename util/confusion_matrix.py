@@ -6,7 +6,6 @@ import torch
 import torchvision.transforms as T
 from torch.utils.data import DataLoader
 import os
-import psutil
 
 from pathlib import Path
 from PIL import Image
@@ -193,21 +192,23 @@ def find_top_losses( coco_path, model):
     with torch.no_grad():
         print('Starting train dataset')
         for sample, targets, image_id in data_loader_train:
+            if image_id[0] % 100 == 0:
+                print(image_id)
             outputs = model(sample)
             loss_dict = criterion(outputs, targets)
             loss = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
-            train_loss_dict[image_id] = loss.item()
+            train_loss_dict[image_id[0]] = loss.item()
         
         print('Starting val dataset')
-        for i, (sample, targets) in enumerate(data_loader_val):     
+        for sample, targets, image_id in data_loader_val:
+            if image_id[0] % 100 == 0:
+                print(image_id)     
             outputs = model(sample)
             loss_dict = criterion(outputs, targets)
             loss = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
-            val_loss_list.append(loss.item())
-
-    train_losses = zip(train_loss_list, img_list_train)
-    val_losses = zip(val_loss_list, img_list_val)    
-    return train_losses, val_losses
+            val_loss_dict[image_id[0]] = loss.item()
+   
+    return train_loss_dict, val_loss_dict
 
 class ConfusionMatrix:
     def __init__(self, num_classes, CONF_THRESHOLD = 0.3, IOU_THRESHOLD = 0.5):
