@@ -6,10 +6,12 @@ Mostly copy-paste from https://github.com/pytorch/vision/blob/13b35ff/references
 """
 from pathlib import Path
 
+import os
 import torch
 import torch.utils.data
 import torchvision
 from pycocotools import mask as coco_mask
+import glob
 
 import datasets.transforms as T
 
@@ -29,6 +31,20 @@ class CocoDetection(torchvision.datasets.CocoDetection):
             img, target = self._transforms(img, target)
         return img, target
 
+class CocoDetectionLoss(torchvision.datasets.CocoDetection):
+    def __init__(self, img_folder, ann_file, transforms, return_masks):
+        super(CocoDetectionLoss, self).__init__(img_folder, ann_file)
+        self._transforms = transforms
+        self.prepare = ConvertCocoPolysToMask(return_masks)
+
+    def __getitem__(self, idx):
+        img, target = super(CocoDetectionLoss, self).__getitem__(idx)
+        image_id = self.ids[idx]
+        target = {'image_id': image_id, 'annotations': target}
+        img, target = self.prepare(img, target)
+        if self._transforms is not None:
+            img, target = self._transforms(img, target)
+        return img, target, image_id
 
 def convert_coco_poly_to_mask(segmentations, height, width):
     masks = []
@@ -140,9 +156,12 @@ def make_coco_transforms(image_set):
             T.RandomResize([800], max_size=1333),
             normalize,
         ])
-
+    if image_set == 'loss_calc':
+        return T.Compose([
+            T.RandomResize([800], max_size=1333),
+            normalize,
+        ]) 
     raise ValueError(f'unknown {image_set}')
-
 
 def build(image_set, args):
     root = Path(args.coco_path)
@@ -156,3 +175,17 @@ def build(image_set, args):
     img_folder, ann_file = PATHS[image_set]
     dataset = CocoDetection(img_folder, ann_file, transforms=make_coco_transforms(image_set), return_masks=args.masks)
     return dataset
+
+def build_no_args(image_set, coco_path):
+    root = Path(coco_path)
+    assert root.exists(), f'provided COCO path {root} does not exist'
+    mode = 'instances'
+    PATHS = {
+        "train": (root / "train2017", root / "annotations" / f'{mode}_train2017.json'),
+        "val": (root / "val2017", root / "annotations" / f'{mode}_val2017.json'),
+    }
+
+    img_folder, ann_file = PATHS[image_set]
+    image_names = glob.glob(os.path.join(img_folder, '*.*g'))
+    dataset = CocoDetectionLoss(img_folder, ann_file, transforms=make_coco_transforms('loss_calc'), return_masks=False)
+    return dataset, image_names

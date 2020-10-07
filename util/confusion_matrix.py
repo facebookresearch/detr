@@ -4,12 +4,21 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import torch
 import torchvision.transforms as T
+from torch.utils.data import DataLoader
+import os
+import psutil
+
 from pathlib import Path
 from PIL import Image
 from pycocotools.coco import COCO
 
+import util.misc as utils
+from models.matcher import HungarianMatcher
+from models.detr import SetCriterion
+from datasets.coco import build_no_args
+
+# https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
 def box_iou_calc(boxes1, boxes2):
-    # https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
     """
     Return intersection-over-union (Jaccard index) of boxes.
     Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
@@ -94,7 +103,7 @@ def generate_conf_outputs(my_image, my_model, threshold):
             y2.append(ymax)
 
     formatted_outputs = list(zip(x1, y1, x2, y2, probability, class_pred))
-    return np.asarray(formatted_outputs)
+    return np.asarray(formatted_outputs), outputs
 
 def getImg(image_name, images):
   for i in images:
@@ -129,22 +138,76 @@ def run_validation_batch(conf_mat, validation_images, coco_anno_path, model, lis
     coco=COCO(coco_anno_path)
     annotations = coco.loadAnns(coco.getAnnIds())
     image_list = coco.loadImgs(coco.getImgIds())
-
+        
     for imagepath in validation_images:
         img_name = Path(imagepath).parts[-1]
         im = Image.open(imagepath)
-        formatted_preds = generate_conf_outputs(im, model, threshold)
         img_id = getImg(img_name, image_list)
-        gt_boxes = getActualBBoxes(img_id, annotations)
-        conf_mat.process_batch(formatted_preds, gt_boxes)
 
+        gt_boxes = getActualBBoxes(img_id, annotations)
+        formatted_preds, _ = generate_conf_outputs(im, model, threshold)
+
+        conf_mat.process_batch(formatted_preds, gt_boxes)
         
     conf_result_df = pd.DataFrame(conf_mat.return_matrix(), columns=list_classes, index=list_classes)
     f, ax = plt.subplots(figsize=(12,10))
     sns.heatmap(conf_result_df, annot=True,  fmt='.0f')
     ax.set(title='Confusion Matrix', xlabel='predicted', ylabel='Actual')
-    return plt.show()
+    return ax
 
+def find_top_losses( coco_path, model):
+    """
+    Function to run confusion matrix validation on all images in validation path. 
+    Arguments:
+        coco_path = path to coco(same as model training argument)
+        model = model to be used for inference
+    Returns: 
+        Train, Validation loss dictionaries. 
+    """
+    #initialize loss dicts
+    train_loss_dict = {}
+    val_loss_dict = {}
+
+    #Create Dataloaders
+    dataset_train, img_list_train = build_no_args(image_set='train', coco_path=coco_path)
+    dataset_val, img_list_val = build_no_args(image_set='val', coco_path=coco_path)
+    sampler_train = torch.utils.data.SequentialSampler(dataset_train)
+    sampler_val = torch.utils.data.SequentialSampler(dataset_val)
+    data_loader_train = DataLoader(dataset_train, batch_size=1, sampler=sampler_train, collate_fn=utils.collate_fn, num_workers=0)
+    data_loader_val = DataLoader(dataset_val, batch_size=1, sampler=sampler_val, collate_fn=utils.collate_fn, num_workers=0)
+
+    #intialize criterion, matcher objects for loss calculation
+    matcher = HungarianMatcher(cost_class=1, cost_bbox=5, cost_giou=2)
+    loss_list = ['labels', 'boxes', 'cardinality']
+    weight_dict = {'loss_ce': 1, 'loss_bbox': 5, 'loss_giou': 2}
+    #aux losses from intermediate layers
+    aux_weight_dict = {}
+    for i in range(5): # 5 = args.enc_layers - 1
+        aux_weight_dict.update({k + f'_{i}': v for k, v in weight_dict.items()})
+    weight_dict.update(aux_weight_dict)
+    criterion =  SetCriterion(num_classes=20, matcher=matcher, weight_dict=weight_dict,
+                             eos_coef=0.1, losses=loss_list)
+    criterion.eval()
+
+
+    with torch.no_grad():
+        print('Starting train dataset')
+        for sample, targets, image_id in data_loader_train:
+            outputs = model(sample)
+            loss_dict = criterion(outputs, targets)
+            loss = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
+            train_loss_dict[image_id] = loss.item()
+        
+        print('Starting val dataset')
+        for i, (sample, targets) in enumerate(data_loader_val):     
+            outputs = model(sample)
+            loss_dict = criterion(outputs, targets)
+            loss = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
+            val_loss_list.append(loss.item())
+
+    train_losses = zip(train_loss_list, img_list_train)
+    val_losses = zip(val_loss_list, img_list_val)    
+    return train_losses, val_losses
 
 class ConfusionMatrix:
     def __init__(self, num_classes, CONF_THRESHOLD = 0.3, IOU_THRESHOLD = 0.5):
