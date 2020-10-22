@@ -11,8 +11,8 @@ There are sub-modules as follows:
 * RenderInterface : This module is the command line interface to create a scene and manage it, with the functionalities like automatic placement(To be implemented) and importing object in to the scene or deleting it, (might be more to it, not now)
 
 
-script __render\_poses.py__ is the script that is to be passed in blender for the whole process
+script src/__render\_poses.py__ is the script that is to be passed in blender for the whole process
 
-script __rendering\_pipeline.pt__ : [NOT DEVELOPED] arranges all the arguments containing the paths for the necessary files (haven't decided it yet... might not use it later)
+script src/__rendering\_pipeline.pt__ : [NOT DEVELOPED] arranges all the arguments containing the paths for the necessary files (haven't decided it yet... might not use it later)
 
 To begin with for now you can run: `blender --python render_poses.py`, there is a class method `dry_run()` for testing purpose, which has manually generated blender scene
