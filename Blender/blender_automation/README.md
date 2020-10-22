@@ -13,6 +13,6 @@ There are sub-modules as follows:
 
 script src/__render\_poses.py__ is the script that is to be passed in blender for the whole process
 
-script src/__rendering\_pipeline.pt__ : [NOT DEVELOPED] arranges all the arguments containing the paths for the necessary files (haven't decided it yet... might not use it later)
+script src/__rendering\_pipeline.pt__ : [NOT DEVELOPED] arranges all the arguments containing the paths for the necessary files (haven't decided it yet... might not use it at all)
 
 To begin with for now you can run: `blender --python render_poses.py`, there is a class method `dry_run()` for testing purpose, which has manually generated blender scene
