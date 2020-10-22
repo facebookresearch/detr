@@ -4,10 +4,10 @@ Provides high level command line interface to develop a scene in blender and ren
 it to a image file or files
 
 There are sub-modules as follows:
-* Blender API :
-	* BlenderObject : BlenderObject Class provides methods to change the geomentrical details along with the placement and provide functionality like Importing an object and deleting it
-	* BlenderScene : This class manages the Scene in blender, keep track of objects in it
-	* BlenderCamera : Provide method to change the geographical parameters for the camera to get different images from the created scene
+* __Blender API__ :
+	* __BlenderObject__ : BlenderObject Class provides methods to change the geomentrical details along with the placement and provide functionality like Importing an object and deleting it
+	* __BlenderScene__ : This class manages the Scene in blender, keep track of objects in it
+	* __BlenderCamera__ : Provide method to change the geographical parameters for the camera to get different images from the created scene
 * RenderInterface : This module is the command line interface to create a scene and manage it, with the functionalities like automatic placement(To be implemented) and importing object in to the scene or deleting it, (might be more to it, not now)
 
 
