@@ -10,7 +10,8 @@ All those packages can be downloaded straight from pip if not installed
 ### how to use
 Open blender, click the scripting tab, then open the main fridge generation file. The file can be run from within Blender to see the results visually. 
 
-Alternatively, it can be run using the command line as well (remove the --background argument if you'd like to see the Blender GUI). 
+Alternatively, it can be run using the command line as well (remove the --background argument if you'd like to see the Blender GUI).
+
 blender --background --python fridge.py 
 
 ##### To-Do: 
