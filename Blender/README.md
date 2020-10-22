@@ -12,7 +12,7 @@ Open blender, click the scripting tab, then open the main fridge generation file
 
 Alternatively, it can be run using the command line as well (remove the --background argument if you'd like to see the Blender GUI).
 
-blender --background --python fridge.py 
+blender --background --python fridge_generation.py 
 
 ##### To-Do: 
 1. Automatic placement of items
