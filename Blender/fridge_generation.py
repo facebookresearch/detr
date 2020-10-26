@@ -1,9 +1,10 @@
 import bpy
 import sys
+import math
 
 #add folder containing utils to sys paths for importing
-sys.path.append(r"C:\Users\nickh\Google Drive\Colab Notebooks\fridge_det\Blender")
-from utils import select_object, clean_sketchup_cams, delete_all, find_z_coord
+sys.path.append(r"C:\Users\nickh\Documents\GitHub\Fridge-Food-Type\Blender")
+from blender_automation.utils import select_object, clean_sketchup_cams, delete_all, find_z_coord, intersection_check
 
 delete_all()
 
@@ -11,16 +12,16 @@ delete_all()
 fridge_path = r"C:\Users\nickh\Google Drive\Colab Notebooks\fridge_det\Blender\objects\fridge_base.dae"
 bpy.ops.wm.collada_import(filepath=fridge_path)
 
-
 #Add Wine bottle
-wine_path = r"C:\Users\nickh\Google Drive\Colab Notebooks\fridge_det\Blender\objects\wine_bottle_cab\model.dae"
-bpy.ops.wm.collada_import(filepath=wine_path)
-clean_sketchup_cams()
-select_object('SketchUp')#Wine bottle imports as SketchUp
-bpy.context.view_layer.objects.active = bpy.data.objects['SketchUp']
+wine2_loc = r"C:\Users\nickh\Google Drive\Colab Notebooks\fridge_det\Blender\objects\750ML_Wine\750ML_Wine.obj"
+bpy.ops.import_scene.obj(filepath=wine2_loc)
+select_object('750ML_Wine')
+bpy.context.view_layer.objects.active = bpy.data.objects['750ML_Wine']
 bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
-wine_z = find_z_coord('SketchUp', origin_center = False, shelf_num=1)
-bpy.context.object.location = (0.1, -0.32, wine_z)
+bpy.ops.transform.resize(value=(0.014387, 0.014387, 0.014387), orient_type='GLOBAL')
+bpy.context.object.rotation_euler = (0, 0, 0)
+z = find_z_coord('750ML_Wine', origin_center=True, shelf_num=1)
+bpy.context.object.location = (0, -.05, z)
 
 #Add apple
 apple_loc = r"C:\Users\nickh\Google Drive\Colab Notebooks\fridge_det\Blender\objects\apple\manzana2.obj"
@@ -46,7 +47,27 @@ bpy.context.object.rotation_euler = (-0.175, 0, 0)
 tomato_z = find_z_coord('Tomato_v1')
 bpy.context.object.location = (0, -.3, tomato_z)
 
+#Grapes
+loc = r"C:\Users\nickh\Google Drive\Colab Notebooks\fridge_det\Blender\objects\grapes_1\grapes_1.obj"
+bpy.ops.import_scene.obj(filepath=loc)
+select_object('grapes_1')
+bpy.context.view_layer.objects.active = bpy.data.objects['grapes_1']
+bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+bpy.ops.transform.resize(value=(0.02, 0.02, 0.02), orient_type='GLOBAL')
+bpy.context.object.rotation_euler = (0, math.radians(45), math.radians(45))
+z = find_z_coord('grapes_1', origin_center=True, shelf_num=2)
+bpy.context.object.location = (-0.1, -.3, z)
 
+#lettuce
+let_loc = r"C:\Users\nickh\Google Drive\Colab Notebooks\fridge_det\Blender\objects\LettuceRomaine\LettuceRomaine.obj"
+bpy.ops.import_scene.obj(filepath=let_loc)
+select_object('LettuceRomaine')
+bpy.context.view_layer.objects.active = bpy.data.objects['LettuceRomaine']
+bpy.ops.transform.resize(value=(0.008, 0.008, 0.008))
+bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
+bpy.context.object.rotation_euler = (math.radians(180), 0, 0)
+let_z = find_z_coord('LettuceRomaine', origin_center=True, shelf_num=1)
+bpy.context.object.location = (-0.12, -0.3, let_z)
 
 
 #Adding camera
@@ -64,6 +85,7 @@ bpy.context.scene.render.resolution_y = 800
 bpy.context.scene.render.filepath = '/Users/nickh/Documents/Fellowship/Fridge/3D generation/output.jpg'
 #bpy.ops.render.render(write_still=True)
 
+print(intersection_check('manzana2'))
 
 
 ''' 

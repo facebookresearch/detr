@@ -145,3 +145,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+#Blender objects
+Blender/blender_automation/workspace/objects/
