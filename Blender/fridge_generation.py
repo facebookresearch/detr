@@ -21,7 +21,7 @@ bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
 bpy.ops.transform.resize(value=(0.014387, 0.014387, 0.014387), orient_type='GLOBAL')
 bpy.context.object.rotation_euler = (0, 0, 0)
 z = find_z_coord('750ML_Wine', origin_center=True, shelf_num=1)
-bpy.context.object.location = (0, -.05, z)
+bpy.context.object.location = (-0.2, -0.35, z)
 
 #Add apple
 apple_loc = r"C:\Users\nickh\Google Drive\Colab Notebooks\fridge_det\Blender\objects\apple\manzana2.obj"
@@ -32,9 +32,8 @@ bpy.context.view_layer.objects.active = bpy.data.objects['manzana2']
 bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
 bpy.ops.transform.resize(value=(0.001365, 0.001365, 0.001365), orient_type='GLOBAL', orient_matrix=((1, 0, 0), (0, 1, 0), (0, 0, 1)), orient_matrix_type='GLOBAL', mirror=True, use_proportional_edit=False, proportional_edit_falloff='SMOOTH', proportional_size=1, use_proportional_connected=False, use_proportional_projected=False)
 bpy.context.object.rotation_euler = (-0.778549, -0.057743, 0.137881)
-apple_z = find_z_coord('manzana2')
+apple_z = find_z_coord('manzana2', origin_center=True, shelf_num=2)
 bpy.context.object.location = (0.19139, -0.10539, apple_z)
-
 
 #Tomato code chunk
 tomato_loc = r"C:\Users\nickh\Google Drive\Colab Notebooks\fridge_det\Blender\objects\tomato\Tomato_v1.obj"
@@ -45,7 +44,7 @@ bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
 bpy.ops.transform.resize(value=(0.009365, 0.009365, 0.009365), orient_type='GLOBAL')
 bpy.context.object.rotation_euler = (-0.175, 0, 0)
 tomato_z = find_z_coord('Tomato_v1')
-bpy.context.object.location = (0, -.3, tomato_z)
+bpy.context.object.location = (0, -.25, tomato_z)
 
 #Grapes
 loc = r"C:\Users\nickh\Google Drive\Colab Notebooks\fridge_det\Blender\objects\grapes_1\grapes_1.obj"
@@ -55,8 +54,8 @@ bpy.context.view_layer.objects.active = bpy.data.objects['grapes_1']
 bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
 bpy.ops.transform.resize(value=(0.02, 0.02, 0.02), orient_type='GLOBAL')
 bpy.context.object.rotation_euler = (0, math.radians(45), math.radians(45))
-z = find_z_coord('grapes_1', origin_center=True, shelf_num=2)
-bpy.context.object.location = (-0.1, -.3, z)
+z = find_z_coord('grapes_1', origin_center=True, shelf_num=1)
+bpy.context.object.location = (-0.1, -0.05, z)
 
 #lettuce
 let_loc = r"C:\Users\nickh\Google Drive\Colab Notebooks\fridge_det\Blender\objects\LettuceRomaine\LettuceRomaine.obj"
@@ -66,14 +65,14 @@ bpy.context.view_layer.objects.active = bpy.data.objects['LettuceRomaine']
 bpy.ops.transform.resize(value=(0.008, 0.008, 0.008))
 bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY', center='BOUNDS')
 bpy.context.object.rotation_euler = (math.radians(180), 0, 0)
-let_z = find_z_coord('LettuceRomaine', origin_center=True, shelf_num=1)
+let_z = find_z_coord('LettuceRomaine', origin_center=True, shelf_num=2)
 bpy.context.object.location = (-0.12, -0.3, let_z)
 
 
 #Adding camera
-bpy.ops.object.camera_add(enter_editmode=False, align='VIEW', location=(0, -2.25, 2), rotation=(1.26929, 0 , 0), scale=(1, 1, 1))
+bpy.ops.object.camera_add(enter_editmode=False, align='VIEW', location=(0, -2, 1.75), rotation=(1.45, 0 , 0))
 #Adding light
-bpy.ops.object.light_add(type='POINT', radius=0.25, align='WORLD', location=(0, -1, 1.5), scale=(1, 1, 1))
+bpy.ops.object.light_add(type='POINT', radius=0.1, align='WORLD', location=(0.2, -1, 1.5))
 
 
 # Setting render settings - only some render engines are compatible with used textures/materials
@@ -85,7 +84,7 @@ bpy.context.scene.render.resolution_y = 800
 bpy.context.scene.render.filepath = '/Users/nickh/Documents/Fellowship/Fridge/3D generation/output.jpg'
 #bpy.ops.render.render(write_still=True)
 
-print(intersection_check('manzana2'))
+#print(intersection_check('manzana2'))
 
 
 ''' 

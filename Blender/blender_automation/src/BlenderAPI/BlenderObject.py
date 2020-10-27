@@ -1,6 +1,14 @@
 import bpy
 import mathutils as mathU
 import os
+import pandas as pd
+import random
+
+#Json generated from jupyter NB, imports as dataframe
+#index by object name
+#available params are shelves, path, origin, scale_factor
+#Not sure best place to put this line
+object_dict = pd.read_json('object_dict.json')
 
 def check_is_iter(input, size):
     try:
@@ -26,6 +34,48 @@ def rotate(vector, quaternion):
     quanjugate = quaternion.copy()
     quanjugate.conjugate()
     return quaternion * vecternion * quanjugate
+
+def intersection_check(checked_obj):
+    """
+    Will take item name and output if it intersects with any other objects.
+    Returns True if intersecting an object, false if no intersections. 
+    """
+    scene =  bpy.context.scene
+    for obj_next in bpy.context.scene.objects:
+        if obj_next.type == 'MESH':
+            obj_name = obj_next.name
+            #initialize bmesh objects
+            bm1 = bmesh.new()
+            bm2 = bmesh.new()
+            #fill bmesh data from objects
+            bm1.from_mesh(scene.objects[checked_obj].data)
+            bm2.from_mesh(scene.objects[obj_name].data)            
+            #transform needed to check inter
+            bm1.transform(scene.objects[checked_obj].matrix_world)
+            bm2.transform(scene.objects[obj_name].matrix_world) 
+            #make BVH tree from BMesh of objects
+            obj_BVHtree = BVHTree.FromBMesh(bm1)
+            obj_next_BVHtree = BVHTree.FromBMesh(bm2)           
+
+            #get intersecting pairs
+            inter = obj_BVHtree.overlap(obj_next_BVHtree)
+
+    if inter != []:
+        return True
+    else:
+        return False
+
+def find_z_coord(item_name, origin_center=True, shelf_num=1):
+    """
+    Gives the necessary z-axis coordinate to place item on shelf.
+    """
+    shelf_heights = [1.2246, 1.5581, 1.7443]
+    shelf_z = shelf_heights[shelf_num-1]
+    z_coord = shelf_z
+    if origin_center:
+        z_coord += bpy.data.objects[item_name].dimensions.z/2
+    return z_coord
+
 
 
 class BlenderObject(object):
@@ -72,7 +122,25 @@ class BlenderObject(object):
         ''' set location for the object in the scene '''
         self.reference.location=(x, y, z)
         print(f'{self.name} : location set to : {(x, y, z)}')
-    
+
+    def place_randomly(self, ):
+        """
+        Chooses random coords for object placement. 
+        Requires dict of object states. 
+        Should be run after resize is done.
+        """
+        item_params = object_dict[self.name]
+        dim_x, dim_y, dim_z = bpy.data.objects[self.name].dimensions
+        x_lims = [-0.25493 + dim_x/2, 0.29941 - dim_x/2]#hardcoded limits, offset by item width
+        y_lims = [-0.4206 + dim_y/2, 0.025957 - dim_y/2]#hardcoded limits, offset by item width
+        retry_tracker = True
+        while retry_tracker == True:
+            z_temp = find_z_coord(self.name, origin_center=item_params['origin']=='CENTER', shelf_num=random.choice(item_params['shelves']))
+            x_temp = random.uniform(x_lims[0], x_lims[1])
+            y_temp = random.uniform(y_lims[0], y_lims[1])
+            self.set_location(x=x_temp, y=y_temp, z=z_temp)
+            retry_tracker = intersection_check(self.name)
+
     def set_euler_rotation(self, x, y, z):
         ''' set euler orientation for the object in the scene '''
         self.reference.rotation_mode = 'XYZ'
@@ -104,7 +172,7 @@ class BlenderObject(object):
     def rotate(self, w, x, y, z):
         ''' Rotate the object in quaternion format '''
         self.reference.roation_mode = 'QUATERNION'
-        q = to_quternion(w, x, y, z)
+        q = to_quaternion(w, x, y, z)
         q = q*self.reference.rotation_quaternion
         self.reference.rotation_quaternion = q
 
