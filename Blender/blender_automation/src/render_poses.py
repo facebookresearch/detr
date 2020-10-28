@@ -8,11 +8,16 @@ import bpy
 import json
 import argparse
 
-# To import implemented Blender API
-sys.path.append('/home/solus/blender_automation/src')
+# To import implemented Blender API, now generalized
+#sys.path.append('/home/solus/blender_automation/src')
+temp_path = os.path.realpath(__file__)
+sys.path.append(os.path.dirname(temp_path))
+
 # To import python packages like pandas
-sys.path.append('/home/solus/anaconda3/lib/python3.8/site-packages')
-print(sys.path)
+#TODO generalize this path
+#sys.path.append('/home/solus/anaconda3/lib/python3.8/site-packages')
+sys.path.append(r"C:\Users\nickh\anaconda3\Lib\site-packages")
+#print(sys.path)
 from RenderInterface import RenderInterface
 # Creating a RenderInterface which would be doing all the importing and
 # placement of the objects, along with the scene/rendering setup

@@ -5,7 +5,7 @@ import os
 import sys
 import time
 import uuid
-import pandas as pd
+import json
 from BlenderAPI import *
 
 class RenderInterface(object):
@@ -43,7 +43,8 @@ class RenderInterface(object):
         #index by object name
         #available params are shelves, path, origin, scale_factor
         #Not sure best place to put this line
-        object_dict = pd.read_json('object_dict.json')
+        with open('object_dict.json') as f:
+            object_dict = json.load(f)
     
         fridge = self.scene.import_object(filepath='./../workspace/objects/fridge_base.dae', \
             overwrite=False, \
