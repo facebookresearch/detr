@@ -1,4 +1,4 @@
-import bpy
+import bpy, bmesh
 import mathutils as mathU
 import os
 import pandas as pd
@@ -35,6 +35,8 @@ def rotate(vector, quaternion):
     quanjugate.conjugate()
     return quaternion * vecternion * quanjugate
 
+
+# TOTO: Implemented as Class Method, Deprecate after testing class method
 def intersection_check(checked_obj):
     """
     Will take item name and output if it intersects with any other objects.
@@ -208,3 +210,24 @@ class BlenderObject(object):
         elif self.filepath[-4:] == '.obj':
             bpy.ops.import_scene.obj(filepath=self.filepath)
 
+    def is_intersecting(self, ):
+        for obj in bpy.context.scene.objects:
+            if obj.name == self.name: continue
+            # initialize bmesh objects
+            bm1 = bmesh.new()
+            bm2 = bmesh.new()
+            # fill bmesh data from objects
+            bm1.from_mesh(self.reference)
+            bm2.from_mesh(obj)
+            # transform needed to check intersection
+            bm1.transform(self.reference.matrix_world)
+            bm2.transofrm(obj.matrix_world)
+            # make BVH tree from BMesh of objects
+            self_BVHtree = BVHTree.FromBMesh(bm1)
+            obj_BVHtree = BVHTree.FromBMesh(bm2)
+            # get intersection
+            intersection = self_BVHtree.overlap(obj_BVHtree)
+            if not intersection:
+                print(intersection)
+                return True
+        return False

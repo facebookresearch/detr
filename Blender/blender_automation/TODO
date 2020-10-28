@@ -1,0 +1,4 @@
+1. take parameters needed for placement configuration
+2. write pseudo script for random placement using grids / by finding empty space
+3. write a test run and return the bounding boxes
+
