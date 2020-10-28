@@ -70,7 +70,7 @@ class RenderInterface(object):
 
         # # NOTE: If object's location, scale, orientation needed to be ketp as in the object file
         # # pass the argument, overwrite=False
-        wine = self.scene.import_object(filepath='./../workspace/objects/wine_bottle_cab/model.dae', \
+        wine = self.scene.import_object(filepath='./../workspace/objects/750ML_Wine/750ML_Wine.obj', \
              overwrite=False, \
              fixed=False)
         wine.set_location(0.1, -.32, 1.2245)
@@ -82,6 +82,8 @@ class RenderInterface(object):
         self.scene.camera.set_location(0, -2.5, 2)
         self.scene.camera.set_euler_rotation(1.26929, 0.0138826, -0.120164)
 
+    def shuffle_objects(self, ):
         # random placement of Apple
-        apple.place_randomly(object_dict[apple.name])
-        tomato.place_randomly(object_dict[tomato.name])
+        for obj in self.scene.objects_unfixed:
+            obj.place_randomly(object_dict[obj.name])
+
