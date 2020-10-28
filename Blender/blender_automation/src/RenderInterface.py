@@ -39,7 +39,12 @@ class RenderInterface(object):
 
     def dry_run(self, ):
         ''' Testing building a scene by manual placement'''
-      
+        #Json generated from jupyter NB, imports as dataframe
+        #index by object name
+        #available params are shelves, path, origin, scale_factor
+        #Not sure best place to put this line
+        object_dict = pd.read_json('object_dict.json')
+        
         apple = self.scene.import_object(filepath='./../workspace/objects/apple/manzana2.obj', \
             scale=(0.001368, 0.001368, 0.001368), \
             location=(0.19139, -0.10539, 1.284), \
@@ -49,21 +54,24 @@ class RenderInterface(object):
         # apple.set_scale((0.001368, 0.001368, 0.001368))
         # apple.set_euler_rotation(-0.778549, -0.057743, 0.137881)
 
-        tomato = self.scene.import_object(filepath='./../workspace/objects/tomato/Tomato_v1.obj', \
-            # scale=(0.009365, 0.009365, 0.009365), \
-            # location= (0, -.3, 1.28), \
-            # orientation= (-.175, 0, 0), \
-            fixed=False)
-        tomato.set_scale((0.009365, 0.009365, 0.009365))
-        tomato.set_location(0, -.3, 1.28)
-        tomato.set_euler_rotation(-.175, 0, 0)
+        # random placement of Apple
+        apple.place_randomly(object_dict[apple.name])
 
-        # NOTE: If object's location, scale, orientation needed to be ketp as in the object file
-        # pass the argument, overwrite=False
-        wine = self.scene.import_object(filepath='./../workspace/objects/wine_bottle_cab/model.dae', \
-            overwrite=False, \
-            fixed=False)
-        wine.set_location(0.1, -.32, 1.2245)
+        # tomato = self.scene.import_object(filepath='./../workspace/objects/tomato/Tomato_v1.obj', \
+        #     # scale=(0.009365, 0.009365, 0.009365), \
+        #     # location= (0, -.3, 1.28), \
+        #     # orientation= (-.175, 0, 0), \
+        #     fixed=False)
+        # tomato.set_scale((0.009365, 0.009365, 0.009365))
+        # tomato.set_location(0, -.3, 1.28)
+        # tomato.set_euler_rotation(-.175, 0, 0)
+
+        # # NOTE: If object's location, scale, orientation needed to be ketp as in the object file
+        # # pass the argument, overwrite=False
+        # wine = self.scene.import_object(filepath='./../workspace/objects/wine_bottle_cab/model.dae', \
+        #     overwrite=False, \
+        #     fixed=False)
+        # wine.set_location(0.1, -.32, 1.2245)
 
         fridge = self.scene.import_object(filepath='./../workspace/objects/fridge_base.dae', \
             overwrite=False, \

@@ -113,7 +113,7 @@ class BlenderObject(object):
                 print(bpy.context.selected_objects)
                 assert len(bpy.context.selected_objects) == 1, "more than one object are selected!!!"
                 self.reference = bpy.context.selected_objects[0]
-        else :
+        else:
             self.reference = reference
         self.name = self.reference.name
 
@@ -125,23 +125,28 @@ class BlenderObject(object):
         self.reference.location=(x, y, z)
         print(f'{self.name} : location set to : {(x, y, z)}')
 
-    def place_randomly(self, ):
+    def place_randomly(self, params):
         """
         Chooses random coords for object placement. 
         Requires dict of object states. 
         Should be run after resize is done.
         """
-        item_params = object_dict[self.name]
-        dim_x, dim_y, dim_z = bpy.data.objects[self.name].dimensions
-        x_lims = [-0.25493 + dim_x/2, 0.29941 - dim_x/2]#hardcoded limits, offset by item width
-        y_lims = [-0.4206 + dim_y/2, 0.025957 - dim_y/2]#hardcoded limits, offset by item width
+        
+        # item_params = object_dict[self.name]
+        # dim_x, dim_y, dim_z = bpy.data.objects[self.name].dimensions
+        dim_x, dim_y, dim_z = self.reference.dimensions
+        #hardcoded limits, offset by item width
+        x_lims = [-0.25493 + dim_x/2, 0.29941 - dim_x/2]
+        #hardcoded limits, offset by item width
+        y_lims = [-0.4206 + dim_y/2, 0.025957 - dim_y/2]
         retry_tracker = True
         while retry_tracker == True:
-            z_temp = find_z_coord(self.name, origin_center=item_params['origin']=='CENTER', shelf_num=random.choice(item_params['shelves']))
+            z_temp = find_z_coord(self.name, origin_center=params['origin']=='CENTER', shelf_num=random.choice(params['shelves']))
             x_temp = random.uniform(x_lims[0], x_lims[1])
             y_temp = random.uniform(y_lims[0], y_lims[1])
             self.set_location(x=x_temp, y=y_temp, z=z_temp)
-            retry_tracker = intersection_check(self.name)
+            # calling a class method to check if the object is intersecting with others
+            retry_tracker = self.intersection_check()
 
     def set_euler_rotation(self, x, y, z):
         ''' set euler orientation for the object in the scene '''
@@ -175,7 +180,7 @@ class BlenderObject(object):
         ''' Rotate the object in quaternion format '''
         self.reference.roation_mode = 'QUATERNION'
         q = to_quaternion(w, x, y, z)
-        q = q*self.reference.rotation_quaternion
+        q = q * self.reference.rotation_quaternion
         self.reference.rotation_quaternion = q
 
     def delete(self):
@@ -212,7 +217,8 @@ class BlenderObject(object):
 
     def is_intersecting(self, ):
         for obj in bpy.context.scene.objects:
-            if obj.name == self.name: continue
+            if obj.name == self.name:
+                continue
             # initialize bmesh objects
             bm1 = bmesh.new()
             bm2 = bmesh.new()
