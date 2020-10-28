@@ -5,7 +5,7 @@ import os
 import sys
 import time
 import uuid
-
+import pandas as pd
 from BlenderAPI import *
 
 class RenderInterface(object):
@@ -44,7 +44,11 @@ class RenderInterface(object):
         #available params are shelves, path, origin, scale_factor
         #Not sure best place to put this line
         object_dict = pd.read_json('object_dict.json')
-        
+    
+        fridge = self.scene.import_object(filepath='./../workspace/objects/fridge_base.dae', \
+            overwrite=False, \
+            fixed=True)
+
         apple = self.scene.import_object(filepath='./../workspace/objects/apple/manzana2.obj', \
             scale=(0.001368, 0.001368, 0.001368), \
             location=(0.19139, -0.10539, 1.284), \
@@ -54,32 +58,29 @@ class RenderInterface(object):
         # apple.set_scale((0.001368, 0.001368, 0.001368))
         # apple.set_euler_rotation(-0.778549, -0.057743, 0.137881)
 
-        # random placement of Apple
-        apple.place_randomly(object_dict[apple.name])
-
-        # tomato = self.scene.import_object(filepath='./../workspace/objects/tomato/Tomato_v1.obj', \
-        #     # scale=(0.009365, 0.009365, 0.009365), \
-        #     # location= (0, -.3, 1.28), \
-        #     # orientation= (-.175, 0, 0), \
-        #     fixed=False)
+        tomato = self.scene.import_object(filepath='./../workspace/objects/tomato/Tomato_v1.obj', \
+            scale=(0.009365, 0.009365, 0.009365), \
+            location= (0, -.3, 1.28), \
+            orientation= (-.175, 0, 0), \
+            fixed=False)
         # tomato.set_scale((0.009365, 0.009365, 0.009365))
         # tomato.set_location(0, -.3, 1.28)
         # tomato.set_euler_rotation(-.175, 0, 0)
 
         # # NOTE: If object's location, scale, orientation needed to be ketp as in the object file
         # # pass the argument, overwrite=False
-        # wine = self.scene.import_object(filepath='./../workspace/objects/wine_bottle_cab/model.dae', \
-        #     overwrite=False, \
-        #     fixed=False)
-        # wine.set_location(0.1, -.32, 1.2245)
-
-        fridge = self.scene.import_object(filepath='./../workspace/objects/fridge_base.dae', \
-            overwrite=False, \
-            fixed=True)
-
+        wine = self.scene.import_object(filepath='./../workspace/objects/wine_bottle_cab/model.dae', \
+             overwrite=False, \
+             fixed=False)
+        wine.set_location(0.1, -.32, 1.2245)
+        
         # adding light
         bpy.ops.object.light_add(type='POINT', radius=0.25, align='WORLD', location=(-0.25, -1, 1.5))
 
         # chaning scene camera parameters
         self.scene.camera.set_location(0, -2.5, 2)
         self.scene.camera.set_euler_rotation(1.26929, 0.0138826, -0.120164)
+
+        # random placement of Apple
+        apple.place_randomly(object_dict[apple.name])
+        tomato.place_randomly(object_dict[tomato.name])
