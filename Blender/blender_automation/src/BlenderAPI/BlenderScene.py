@@ -1,4 +1,5 @@
 import bpy
+import bpy_extras
 
 # relative import from other classes
 from .BlenderObject import *
@@ -154,3 +155,28 @@ class BlenderScene(object):
         for lamp in self.lamps:
             lamp.delete()
         self.lamps = []
+
+    def 3d_to_2d_camera_view_point(self, x, y , z):
+        ''' convert the 3d to  2d point from the perspective of camera of the scene '''
+        if self.camera is None:
+            raise Exception('No camera found in the scene for rendering')
+        bpy.context.scene.cursor.location = (x, y, z)
+        co_2d = bpy_extras.object_utils.world_to_camera_view(
+            self.reference,
+            self.camera,
+            bpy.context.scene.cursor.location)
+        print("2D Coords:", co_2d)
+
+        # If you want pixel coords
+        render_scale = self.reference.render.resolution_percentage / 100
+        render_size = (
+            int(self.reference.render.resolution_x * render_scale),
+            int(self.reference.render.resolution_y * render_scale),
+        )
+        x = round(co_2d.x * render_size[0], 6)
+        y = round(co_2d.y * render_size[1], 6)
+        z = round(co_2d.z * render_size[1])
+        return x, y, z
+        # z is just for the placement of the object from the camera
+        # if z is positive then the object is in front, 
+        # and if negative then the object is behind the camera and not visible

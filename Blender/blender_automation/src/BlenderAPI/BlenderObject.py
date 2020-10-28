@@ -242,12 +242,11 @@ class BlenderObject(object):
             obj_BVHtree = BVHTree.FromBMesh(bm2)
             # get intersection
             intersection = self_BVHtree.overlap(obj_BVHtree)
-            if intersection:
+            if intersection != []:
                 print(intersection)
-                ene = time()
+                end = time()
                 print(f'[{self.name}] Intersection Found  Time Elapsed: {(end-start)} seconds')
                 return True
         end = time()
         print(f'[{self.name}] No Intersection Found  Time Elapsed: {(end-start)} seconds')
         return False
-
