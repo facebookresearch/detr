@@ -156,7 +156,7 @@ class BlenderScene(object):
             lamp.delete()
         self.lamps = []
 
-    def 3d_to_2d_camera_view_point(self, x, y , z):
+    def convert_to_2d_camera_view_point(self, x, y , z):
         ''' convert the 3d to  2d point from the perspective of camera of the scene '''
         if self.camera is None:
             raise Exception('No camera found in the scene for rendering')

@@ -43,7 +43,7 @@ class RenderInterface(object):
         #index by object name
         #available params are shelves, path, origin, scale_factor
         #Not sure best place to put this line
-        with open('object_dict.json') as f:
+        with open('src/object_dict.json') as f:
             object_dict = json.load(f)
     
         fridge = self.scene.import_object(filepath='./../workspace/objects/fridge_base.dae', \
