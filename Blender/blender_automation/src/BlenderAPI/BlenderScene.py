@@ -43,7 +43,7 @@ class BlenderScene(object):
         
         self.reference = reference #bpy.data.scenes[0] or bpy.context.scene
 
-    def set_render(self, resolution=300, samples=128):
+    def set_render(self, resolution=300, samples=128, set_high_quality=False):
         ''' Setting up the scene rendering configuration '''
         self.reference.cycles.film_transparent=True
         self.reference.cycles.max_bounces = 1
@@ -57,6 +57,14 @@ class BlenderScene(object):
         self.reference.render.resolution_x = resolution
         self.reference.render.resolution_y = resolution
         self.reference.render.resolution_percentage = 100
+        if set_high_quality:
+            self.reference.cycles.samples = 512
+            self.reference.cycles.transparent_max_bounces = 24
+            self.reference.cycles.max_bounces = 24
+            self.reference.render.tile_x = 512
+            self.reference.render.tile_y = 512
+            self.reference.render.resolution_x = 400
+            self.reference.render.resolution_y = 600
         # self.reference.render.use_persistent_reference = True
 
 
@@ -203,5 +211,5 @@ class BlenderScene(object):
                         if _x < min_x: min_x = _x
                         if _y > max_y: max_y = _y
                         if _y < min_y: min_y = _y
-            annotation[obj.name] = [min_x, min_y, max_x - min_x, max_y - min_y]
+            annotation[obj.name] = [(round(min_x), round(max_y)), (round(max_x),round(min_y))]
         return annotation

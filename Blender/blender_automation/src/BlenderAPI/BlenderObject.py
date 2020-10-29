@@ -2,15 +2,8 @@ import bpy, bmesh
 import mathutils as mathU
 from mathutils.bvhtree import BVHTree
 import os
-import pandas as pd
 import random
 from time import time
-
-#Json generated from jupyter NB, imports as dataframe
-#index by object name
-#available params are shelves, path, origin, scale_factor
-#Not sure best place to put this line
-object_dict = pd.read_json('object_dict.json')
 
 def check_is_iter(input, size):
     try:
@@ -37,51 +30,16 @@ def rotate(vector, quaternion):
     quanjugate.conjugate()
     return quaternion * vecternion * quanjugate
 
-
-# TOTO: Implemented as Class Method, Deprecate, to be removed
-def intersection_check(checked_obj):
-    """
-    Will take item name and output if it intersects with any other objects.
-    Returns True if intersecting an object, false if no intersections. 
-    """
-    scene =  bpy.context.scene
-    for obj_next in bpy.context.scene.objects:
-        if obj_next.type == 'MESH':
-            obj_name = obj_next.name
-            #initialize bmesh objects
-            bm1 = bmesh.new()
-            bm2 = bmesh.new()
-            #fill bmesh data from objects
-            bm1.from_mesh(scene.objects[checked_obj].data)
-            bm2.from_mesh(scene.objects[obj_name].data)            
-            #transform needed to check inter
-            bm1.transform(scene.objects[checked_obj].matrix_world)
-            bm2.transform(scene.objects[obj_name].matrix_world) 
-            #make BVH tree from BMesh of objects
-            obj_BVHtree = BVHTree.FromBMesh(bm1)
-            obj_next_BVHtree = BVHTree.FromBMesh(bm2)           
-
-            #get intersecting pairs
-            inter = obj_BVHtree.overlap(obj_next_BVHtree)
-
-    if inter != []:
-        return True
-    else:
-        return False
-
-# Excluise to the fridge model that we are using as of now
-def find_z_coord(item_name, origin_center=True, shelf_num=1):
+# Default shelf heights match only current fridge item. 
+def find_z_coord(item_name, origin_center=True, shelf_num=1, shelf_heights=[1.2246, 1.5581, 1.7443]):
     """
     Gives the necessary z-axis coordinate to place item on shelf.
     """
-    shelf_heights = [1.2246, 1.5581, 1.7443]
     shelf_z = shelf_heights[shelf_num-1]
     z_coord = shelf_z
     if origin_center:
         z_coord += bpy.data.objects[item_name].dimensions.z/2
     return z_coord
-
-
 
 class BlenderObject(object):
     '''  Object class to handle all blender objects, provides method to change their geometrical configuration, and importing
@@ -137,9 +95,6 @@ class BlenderObject(object):
         Requires dict of object states. 
         Should be run after resize is done.
         """
-        
-        # item_params = object_dict[self.name]
-        # dim_x, dim_y, dim_z = bpy.data.objects[self.name].dimensions
         dim_x, dim_y, dim_z = self.reference.dimensions
         #hardcoded limits, offset by item width
         x_lims = [-0.25493 + dim_x/2, 0.29941 - dim_x/2]
@@ -154,7 +109,6 @@ class BlenderObject(object):
             self.set_location(x=x_temp, y=y_temp, z=z_temp)
             # calling a class method to check if the object is intersecting with others
             retry_tracker = self.is_intersecting()
-            #retry_tracker = intersection_check()
 
     def set_euler_rotation(self, x, y, z):
         ''' set euler orientation for the object in the scene '''
@@ -224,12 +178,14 @@ class BlenderObject(object):
             bpy.ops.import_scene.obj(filepath=self.filepath)
 
     def is_intersecting(self, ):
+        #mesh matrix doesn't automatically update. Force update at beginning of call
+        bpy.context.view_layer.update()
         if not self.reference.type == 'MESH':
             raise Exception('Object is of not MESH type, hence can\'t find \
                     intersection with other MEST type objects')
         start = time()
         for obj in bpy.context.scene.objects:
-            if obj.name == self.name or not obj.type == 'MESH':
+            if obj.name == self.name or not obj.type == 'MESH' or 'refrigerator' in  obj.name:
                 continue
             # initialize bmesh objects
             bm1 = bmesh.new()
@@ -246,9 +202,8 @@ class BlenderObject(object):
             # get intersection
             intersection = self_BVHtree.overlap(obj_BVHtree)
             if intersection != []:
-                print(intersection)
                 end = time()
-                print(f'[{self.name}] Intersection Found  Time Elapsed: {(end-start)} seconds')
+                print(f'[{self.name}] Intersection Found with {obj.name}  Time Elapsed: {(end-start)} seconds')
                 return True
         end = time()
         print(f'[{self.name}] No Intersection Found  Time Elapsed: {(end-start)} seconds')
