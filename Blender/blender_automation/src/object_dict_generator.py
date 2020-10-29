@@ -6,6 +6,13 @@ origin: possibly depriciated, where origin of item is stored. Should be CENTER f
 scale_factor: scale factor to apply to object on import.
 unconstrained axis: axis allowed for euler random rotation. Only 1 axis per item right now.
     Stored as T/F binary list (x, y, z)
+label_cat: name of labeled category for annotations
+     enum in['n_apple', 'n_bell_pepper', 'n_bottle_juice',
+            'n_bottle_milk', 'n_box_milk', 'n_can_soda', 'n_desserts',
+            'n_eggs', 'n_grapes', 'n_hot_sauce', 'n_jam_jelly',
+            'n_jar_food', 'n_ketchup', 'n_leafy_vegetable', 'n_lemon',
+            'n_mustard', 'n_salad_dressing', 'n_tomato', 'n_water',
+            'n_wine']
 """
 import os
 import json
@@ -19,6 +26,7 @@ wine = {
     'origin': 'CENTER',
     'scale_factor': 0.014387,
     'unconstrained_axis': [0, 0, 1],
+    'label_cat': 'n_wine',
 }
 apple = {
     'shelves': [1, 2, 3],
@@ -26,6 +34,7 @@ apple = {
     'origin': 'CENTER',
     'scale_factor': 0.001365,
     'unconstrained_axis': [0, 0, 1],
+    'label_cat': 'n_apple',
 }
 grapes = {
     'shelves': [1, 2, 3],
@@ -33,6 +42,7 @@ grapes = {
     'origin': 'CENTER',
     'scale_factor': 0.0175,
     'unconstrained_axis': [0, 0, 1],
+    'label_cat': 'n_grapes'
 }
 lettuce = {
     'shelves': [1, 2, 3],
@@ -40,6 +50,7 @@ lettuce = {
     'origin': 'CENTER',
     'scale_factor': 0.008,
     'unconstrained_axis': [0, 0, 1],
+    'label_cat': 'n_leafy_vegetable',
 }
 tomatos = {
     'shelves': [1, 2, 3],
@@ -47,6 +58,7 @@ tomatos = {
     'origin': 'CENTER',
     'scale_factor': 0.009365,
     'unconstrained_axis': [0, 0, 1],
+    'label_cat': 'n_tomato',
 }
 
 #Combine into one dict
