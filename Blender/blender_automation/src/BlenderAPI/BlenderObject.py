@@ -128,6 +128,9 @@ class BlenderObject(object):
         self.reference.location=(x, y, z)
         print(f'{self.name} : location set to : {(x, y, z)}')
 
+    def get_location(self, ):
+        return self.reference.location
+
     def place_randomly(self, params):
         """
         Chooses random coords for object placement. 

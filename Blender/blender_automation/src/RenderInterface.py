@@ -49,14 +49,14 @@ class RenderInterface(object):
             overwrite=False, \
             fixed=True)
 
-        apple = self.scene.import_object(filepath='./../workspace/objects/apple/manzana2.obj', \
-            scale=(0.001368, 0.001368, 0.001368), \
-            location=(0.19139, -0.10539, 1.284), \
-            orientation=(-0.778549, -0.057743, 0.137881), \
-            fixed=False)
-        # apple.set_location(0.19139, -0.10539, 1.28)
-        # apple.set_scale((0.001368, 0.001368, 0.001368))
-        # apple.set_euler_rotation(-0.778549, -0.057743, 0.137881)
+        # apple = self.scene.import_object(filepath='./../workspace/objects/apple/manzana2.obj', \
+        #     scale=(0.001368, 0.001368, 0.001368), \
+        #     location=(0.19139, -0.10539, 1.284), \
+        #     orientation=(-0.778549, -0.057743, 0.137881), \
+        #     fixed=False)
+        # # apple.set_location(0.19139, -0.10539, 1.28)
+        # # apple.set_scale((0.001368, 0.001368, 0.001368))
+        # # apple.set_euler_rotation(-0.778549, -0.057743, 0.137881)
 
         tomato = self.scene.import_object(filepath='./../workspace/objects/tomato/Tomato_v1.obj', \
             scale=(0.009365, 0.009365, 0.009365), \
@@ -70,9 +70,14 @@ class RenderInterface(object):
         # # NOTE: If object's location, scale, orientation needed to be ketp as in the object file
         # # pass the argument, overwrite=False
         wine = self.scene.import_object(filepath='./../workspace/objects/750ML_Wine/750ML_Wine.obj', \
-             overwrite=False, \
-             fixed=False)
-        wine.set_location(0.1, -.32, 1.2245)
+            # location=(0.014387, 0.014387, 0.014387), \
+            # scale=(0.014387, 0.014387, 0.014387), \
+            # orientation= (-0.175, 0, 0), \
+            overwrite=False, \
+            fixed=False)
+        wine.set_location(0.014387, 0.014387, 0.014387)
+        wine.set_scale((0.014387, 0.014387, 0.014387))
+        wine.set_euler_rotation(-0.175, 0, 0)
         
         # adding light
         bpy.ops.object.light_add(type='POINT', radius=0.25, align='WORLD', location=(-0.25, -1, 1.5))

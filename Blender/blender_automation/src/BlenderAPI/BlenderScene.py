@@ -156,14 +156,14 @@ class BlenderScene(object):
             lamp.delete()
         self.lamps = []
 
-    def 3d_to_2d_camera_view_point(self, x, y , z):
+    def point_conversion(self, x, y , z):
         ''' convert the 3d to  2d point from the perspective of camera of the scene '''
         if self.camera is None:
             raise Exception('No camera found in the scene for rendering')
         bpy.context.scene.cursor.location = (x, y, z)
         co_2d = bpy_extras.object_utils.world_to_camera_view(
             self.reference,
-            self.camera,
+            self.camera.reference,
             bpy.context.scene.cursor.location)
         print("2D Coords:", co_2d)
 
@@ -180,3 +180,28 @@ class BlenderScene(object):
         # z is just for the placement of the object from the camera
         # if z is positive then the object is in front, 
         # and if negative then the object is behind the camera and not visible
+
+    def get_annotation(self, ):
+        annotation = {}
+        for obj in self.objects_unfixed:
+            dim_x = obj.reference.dimensions.x
+            dim_y = obj.reference.dimensions.y
+            dim_z = obj.reference.dimensions.z
+            x, y, z = obj.get_location()
+            xs = [x-dim_x/2, x+dim_x/2]
+            ys = [y-dim_y/2, y+dim_y/2]
+            zs = [z-dim_z/2, z+dim_z/2]
+            min_x = float('inf')
+            min_y = float('inf')
+            max_x = float('-inf')
+            max_y = float('-inf')
+            for ix in xs:
+                for iy in ys:
+                    for iz in zs:
+                        _x, _y, _z = self.point_conversion(ix, iy, iz)
+                        if _x > max_x: max_x = _x
+                        if _x < min_x: min_x = _x
+                        if _y > max_y: max_y = _y
+                        if _y < min_y: min_y = _y
+            annotation[obj.name] = [min_x, min_y, max_x - min_x, max_y - min_y]
+        return annotation

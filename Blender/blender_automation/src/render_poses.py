@@ -23,9 +23,13 @@ RI.dry_run() # manually placed objects
 # calling a script manually importing all objects and creating a scene
 start = time()
 for i in range(30):
-	RI.shuffle_objects()
+	# RI.shuffle_objects()
 	# finally render the scene to a file
 	RI.render(os.path.abspath(f'./../workspace/test_{i}.jpg'))
+	annotation = RI.scene.get_annotation()
+	print('\n\n\n', i, ':', annotation)
+	break
+            
 end = time()
 
 print(f'\n\n\n:: Total time elapsed in rendering and replacements: {end-start}')
