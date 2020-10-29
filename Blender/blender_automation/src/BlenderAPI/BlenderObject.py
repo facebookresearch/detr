@@ -7,6 +7,15 @@ import random
 from time import time
 
 def check_is_iter(input, size):
+    ''' Function to check whether the first argument is a iterable or not, with the size of second argument
+        parameters :
+            input: object
+                object which need to be checked, could be anything
+            size : int
+                size against which the object iterability is going to be checked
+        return :
+            True if `input` is iterable and contains `size` number of elements/objects
+    '''
     try:
         input_iter = iter(input)
         return len(input) == size
@@ -14,6 +23,13 @@ def check_is_iter(input, size):
         return False
 
 def check_vector_non_negative(input):
+    ''' Function to check the input is negative or not.
+        parameters :
+            input : vector or any iterable object
+                vector whose values are in question
+        return :
+            True if `input` is iterable/vector like object consists of positive values only
+    '''
     for item in input:
         if not (item >= 0):
             return False
@@ -35,6 +51,17 @@ def rotate(vector, quaternion):
 def find_z_coord(item_name, origin_center=True, shelf_num=1, shelf_heights=[1.2246, 1.5581, 1.7443]):
     """
     Gives the necessary z-axis coordinate to place item on shelf.
+        parameters :
+            item_name: string
+                item/object name in the scene
+            origin_center: bool
+                [To be completed]
+            shelf_num : int
+                shelf number determines the shelf that is being used and according to that which height is to be used
+            shelf_heights: array/list[float, ]
+                array containing the shelf hieghts of different shelves in the fridge(in our case) otherwise depends on the model being used
+        returns : float
+            height/z coordinate accoriding to the height of the shelf being used for placement of the objects
     """
     shelf_z = shelf_heights[shelf_num-1]
     z_coord = shelf_z
@@ -43,8 +70,47 @@ def find_z_coord(item_name, origin_center=True, shelf_num=1, shelf_heights=[1.22
     return z_coord
 
 class BlenderObject(object):
-    '''  Object class to handle all blender objects, provides method to change their geometrical configuration, and importing
-        or deleting them'''
+    '''  Base class representing a Blender Object includes imported model, scene, camera, etc. It also encapsulates different methods that are frequently used for blender objects, including simple operations like setting location, scale, orientation
+         Attributes:
+             filepath : string (optional)
+                 Given a BlenderObject refering to an imported model, `filepath` would be storing the file path of the model imported.
+             reference : bpy objects (optional)
+                 reference that blender uses for the object. Ex: bpy.data.objects['model_X'] or bpy.context.scene.objects[0]
+             name : string (optional)
+                 name of the imported model which could be used for refering the actual bpy objects like `bpy.data.objects['name']
+
+        Methods:
+            __init__(location=(), orientation=(), scale=(), refernece=None, name=None, filepath=None, overwrite=True, **kwargs):
+                Construct all the necessary objects and invokes suitable modules to create a object of BlenderObject class
+            blender_create_operation():
+                Implemented in child classes where the object needs to be created from bpy directly like light and camera
+            set_location(x, y, z):
+                set the actual location of the object in the scene
+            set_scale((x, y, z)):
+                set the actual scale to the object in the scene
+            set_euler_rotation(x, y, z):
+                set euler roation to the object in the scene
+            set_rotation(w, x, y, z):
+                set rotation in quaternion mode
+            get_rotation():
+                return quaternion roation of the object
+            get_location():
+                return absolute location of the object in the scene
+            get_scale():
+                return the absolute scale of the object in the scene
+            get_euler_rotation():
+                return the absolute euler orientation parameters of the object
+            delete():
+                delete all the object associate data from the blender runtime including orphan data blocks left after blender deleting object
+            place_randomly(params):
+                Find a place in the scene for the object randomly based on uniform distribution
+            load_from_file():
+                Load object from the file, currenlty supported format: .obj, .dae
+            is_intersection():
+                check if the this object is intersecting from other object in the scene which are of type MESH and not of the name `refrigerator`
+            rotate(w, x, y, z):
+                rotate the object from it's current orientation to the one corresponding the transformation from (`x`, `y`, `z`)
+    '''
     def __init__(self, location=(0,0,0), orientation=(0,0,0), scale=(1,1,1), reference=None, name=None, filepath=None, overwrite=True, **kwargs):
         ''' constructor to initiate the BlenderObject object with reference(bpy.data.object[0]) or just by name, or direcly
             import the object from the file passed as an argument'''
@@ -80,14 +146,24 @@ class BlenderObject(object):
         self.name = self.reference.name
 
     def blender_create_operations(self, ):
+        ''' Implemented in child classes which actually use this feature. Example: light, camera '''
         raise Exception('Error: Not yet implemented')
 
     def set_location(self, x, y, z):
-        ''' set location for the object in the scene '''
+        ''' set location for the object in the scene `set_location(x, y, z)`
+            parameters:
+                x, y, z: float, float, float
+                    set the actual location of the object to (x, y, z) in the 3d space
+        '''
         self.reference.location=(x, y, z)
         print(f'{self.name} : location set to : {(x, y, z)}')
 
     def get_location(self, ):
+        ''' returns the absolute location of the objects
+            returns:
+                (x, y, z): (float, float, float)
+                    3d coordinate of the object location
+        '''
         return self.reference.location
 
     def place_randomly(self, params):
@@ -95,6 +171,9 @@ class BlenderObject(object):
         Chooses random coords for object placement. 
         Requires dict of object states. 
         Should be run after resize is done.
+        parameters:
+            params: dict
+                attribute required for an object to be placed randomly, [To be completed]
         """
         dim_x, dim_y, dim_z = self.reference.dimensions
         #hardcoded limits, offset by item width
@@ -116,42 +195,71 @@ class BlenderObject(object):
             retry_tracker = self.is_intersecting()
 
     def set_euler_rotation(self, x, y, z):
-        ''' set euler orientation for the object in the scene '''
+        ''' set euler orientation for the object in the scene `set_euler_rotation(x, y, z)`
+            parameters:
+                x, y, z: float, float, float
+                    set the actual euler orientation of the object to x, y, z
+        '''
         self.reference.rotation_mode = 'XYZ'
         self.reference.rotation_euler = (x, y ,z)
         print(f'{self.name} : euler rotation set to {(x, y, z)}')
 
     def set_rotation(self, w, x, y, z):
-        ''' set quaternion rotation for the object in the scene '''
+        ''' set quaternion rotation for the object in the scene `set_rotation(w, x, y, z)
+            parameters:
+                w, x, y, z: float, float, float, float
+                    set the actual quaternion orientation of the object to w, x, y, z
+        '''
         self.reference.rotation_mode = 'QUATERNION'
         q = to_quaternion(w, x, y, z)
         self.reference.rotation_quaternion = q
 
-    def set_scale(self, scale):
-        ''' set scale for the object in the scene '''
+    def set_scale(self, _scale_):
+        ''' set scale for the object in the scene `set_scale(_scale_)
+            parameters:
+                _scale_: iterable of size 3
+                    set the scale of the object to the (scale[0], scale[1], scale[2])
+        '''
         valid = check_is_iter(scale, 3) and check_vector_non_negative(scale)
         if not valid:
             raise Exception(f'Scale input is Invalid')
         self.reference.scale = scale
         print(f'{self.name} : Scale set to {scale}')
 
-    def get_rot(self, ):
-        ''' get quaternion orientation parameters '''
+    def get_euler_roation(self, ):
+        ''' get the euler orientation parameters
+            returns:
+                absolute euler rotation of the object / bpy.data.objects['xxx'].rotation_euler
+        '''
+        return self.reference.rotation_euler
+
+    def get_rotation(self, ):
+        ''' get quaternion orientation parameters
+                returns:
+                    quaternion orientation of the object / bpy.data.object['xxx'].rotation_quaternion
+        '''
         return self.reference.rotation_quaternion
 
     def get_scale(self, ):
-        ''' get scale parameters for the object '''
+        ''' get scale parameters for the object
+            returns:
+               scale of the object
+        '''
         return self.reference.scale
 
     def rotate(self, w, x, y, z):
-        ''' Rotate the object in quaternion format '''
+        ''' Rotate the object in quaternion format 
+            parameter:
+                w, x, y, z: float, float, float, float
+                    rotate the object in the quaternion format corresponding the transformation from w, x, y, z
+        '''
         self.reference.roation_mode = 'QUATERNION'
         q = to_quaternion(w, x, y, z)
         q = q * self.reference.rotation_quaternion
         self.reference.rotation_quaternion = q
 
     def delete(self):
-        ''' Delete the object including orphan data associated with the object'''
+        ''' Delete the object including orphan data blocks associated with the object'''
         if self.reference is None:
             return
         bpy.ops.object.select_all(action='DESELECT')
@@ -174,7 +282,7 @@ class BlenderObject(object):
 
 
     def load_from_file(self, ):
-        ''' Import Object from the file'''
+        ''' Import Object from the file, using filepath given while intializing the class object'''
         if not os.path.isfile(os.path.abspath(self.filepath)):
             raise Exception(f'Object File does not exists: {self.filepath}')
         if self.filepath[-4:] == '.dae':
@@ -183,6 +291,11 @@ class BlenderObject(object):
             bpy.ops.import_scene.obj(filepath=self.filepath)
 
     def is_intersecting(self, ):
+        ''' Check whether the object is intersecting to any other object in the scene or not
+            return: bool
+               True : if object is intersecting/overlapping with other object of type 'MESH' in the scene
+               False : otherwise
+        '''
         #mesh matrix doesn't automatically update. Force update at beginning of call
         bpy.context.view_layer.update()
         if not self.reference.type == 'MESH':
