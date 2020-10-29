@@ -234,7 +234,6 @@ class BlenderScene(object):
             self.reference,
             self.camera.reference,
             bpy.context.scene.cursor.location)
-        print("2D Coords:", co_2d)
 
         # If you want pixel coords
         render_scale = self.reference.render.resolution_percentage / 100
