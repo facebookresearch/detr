@@ -30,6 +30,7 @@ start = time()
 for i in range(50):
 	RI.shuffle_objects()
 	# finally render the scene to a file
+	print('Starting rendering...')
 	RI.render(os.path.abspath(f'./workspace/test_{i}.jpg'))
 	print(f'Image {i} completed')
 end = time()

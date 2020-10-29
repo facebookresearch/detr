@@ -31,7 +31,7 @@ class RenderInterface(object):
         cube.delete()
         cam = BlenderCamera(bpy.data.objects['Camera'])
         self.scene.add_camera(cam)
-        self.scene.set_render(resolution, samples)
+        self.scene.set_render(resolution, samples, set_high_quality=True)
 
 
     def render(self, render_path):
@@ -101,8 +101,8 @@ class RenderInterface(object):
         # adding light
         bpy.ops.object.light_add(type='POINT', radius=0.25, align='WORLD', location=(-0.25, -1, 1.5))
 
-        # changing scene camera parameters
-        self.scene.camera.set_location(0, -2, 2)
+        # changing scene/render conditions camera parameters
+        self.scene.camera.set_location(0, -1.75, 1.75)
         self.scene.camera.set_euler_rotation(1.45, 0, 0)
 
         for key in object_dict.keys():
