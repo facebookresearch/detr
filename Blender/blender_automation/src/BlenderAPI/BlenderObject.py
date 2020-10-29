@@ -175,12 +175,14 @@ class BlenderObject(object):
             bpy.ops.import_scene.obj(filepath=self.filepath)
 
     def is_intersecting(self, ):
+        #mesh matrix doesn't automatically update. Force update at beginning of call
+        bpy.context.view_layer.update()
         if not self.reference.type == 'MESH':
             raise Exception('Object is of not MESH type, hence can\'t find \
                     intersection with other MEST type objects')
         start = time()
         for obj in bpy.context.scene.objects:
-            if obj.name == self.name or not obj.type == 'MESH':
+            if obj.name == self.name or not obj.type == 'MESH' or 'refrigerator' in  obj.name:
                 continue
             # initialize bmesh objects
             bm1 = bmesh.new()
@@ -197,9 +199,8 @@ class BlenderObject(object):
             # get intersection
             intersection = self_BVHtree.overlap(obj_BVHtree)
             if intersection != []:
-                print(intersection)
                 end = time()
-                print(f'[{self.name}] Intersection Found  Time Elapsed: {(end-start)} seconds')
+                print(f'[{self.name}] Intersection Found with {obj.name}  Time Elapsed: {(end-start)} seconds')
                 return True
         end = time()
         print(f'[{self.name}] No Intersection Found  Time Elapsed: {(end-start)} seconds')

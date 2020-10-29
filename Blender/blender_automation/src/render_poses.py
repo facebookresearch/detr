@@ -23,14 +23,15 @@ from RenderInterface import RenderInterface
 # Creating a RenderInterface which would be doing all the importing and
 # placement of the objects, along with the scene/rendering setup
 RI = RenderInterface(num_images=1, resolution=1000)
-RI.dry_run() # manually placed objects
+RI.place_all() # manually placed objects
 
 # calling a script manually importing all objects and creating a scene
 start = time()
-for i in range(30):
+for i in range(50):
 	RI.shuffle_objects()
 	# finally render the scene to a file
-	RI.render(os.path.abspath(f'./../workspace/test_{i}.jpg'))
+	RI.render(os.path.abspath(f'./workspace/test_{i}.jpg'))
+	print(f'Image {i} completed')
 end = time()
 
 print(f'\n\n\n:: Total time elapsed in rendering and replacements: {end-start}')

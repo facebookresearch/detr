@@ -46,12 +46,12 @@ class RenderInterface(object):
         with open('src/object_dict.json') as f:
             object_dict = json.load(f)
     
-        fridge = self.scene.import_object(filepath='./../workspace/objects/fridge_base.dae', \
+        fridge = self.scene.import_object(filepath='./workspace/objects/fridge_base.dae', \
             overwrite=False, \
             fixed=True)
 
-        apple = self.scene.import_object(filepath='./../workspace/objects/apple/manzana2.obj', \
-            scale=(0.001368, 0.001368, 0.001368), \
+        apple = self.scene.import_object(filepath='./workspace/objects/apple/manzana2.obj', \
+            scale=0.001368, \
             location=(0.19139, -0.10539, 1.284), \
             orientation=(-0.778549, -0.057743, 0.137881), \
             fixed=False)
@@ -59,8 +59,8 @@ class RenderInterface(object):
         # apple.set_scale((0.001368, 0.001368, 0.001368))
         # apple.set_euler_rotation(-0.778549, -0.057743, 0.137881)
 
-        tomato = self.scene.import_object(filepath='./../workspace/objects/tomato/Tomato_v1.obj', \
-            scale=(0.009365, 0.009365, 0.009365), \
+        tomato = self.scene.import_object(filepath='./workspace/objects/tomato/Tomato_v1.obj', \
+            scale=0.009365, \
             location= (0, -.3, 1.28), \
             orientation= (-.175, 0, 0), \
             fixed=False)
@@ -70,9 +70,9 @@ class RenderInterface(object):
 
         # # NOTE: If object's location, scale, orientation needed to be ketp as in the object file
         # # pass the argument, overwrite=False
-        wine = self.scene.import_object(filepath='./../workspace/objects/750ML_Wine/750ML_Wine.obj', \
-             overwrite=False, \
+        wine = self.scene.import_object(filepath='./workspace/objects/750ML_Wine/750ML_Wine.obj', \
              fixed=False)
+        wine.set_scale(0.014387)
         wine.set_location(0.1, -.32, 1.2245)
         
         # adding light
@@ -82,8 +82,39 @@ class RenderInterface(object):
         self.scene.camera.set_location(0, -2.5, 2)
         self.scene.camera.set_euler_rotation(1.26929, 0.0138826, -0.120164)
 
+    def place_all(self, ):
+        """
+        Place all items are origin. Items can then be shuffled for n iterations and rendered for each placement.
+        """
+        #Json generated from jupyter NB, imports as dataframe
+        #index by object name
+        #available params are shelves, path, origin, scale_factor
+        #Not sure best place to put this line
+        with open('src/object_dict.json') as f:
+            object_dict = json.load(f)
+
+        #fridge object
+        fridge = self.scene.import_object(filepath='./workspace/objects/fridge_base.dae', \
+            overwrite=False, \
+            fixed=True)
+
+        # adding light
+        bpy.ops.object.light_add(type='POINT', radius=0.25, align='WORLD', location=(-0.25, -1, 1.5))
+
+        # changing scene camera parameters
+        self.scene.camera.set_location(0, -2, 2)
+        self.scene.camera.set_euler_rotation(1.45, 0, 0)
+
+        for key in object_dict.keys():
+            sc_fact = object_dict[key]['scale_factor']
+            scale = [sc_fact, sc_fact, sc_fact]
+            self.scene.import_object(filepath=object_dict[key]['path'], scale=scale)
+
     def shuffle_objects(self, ):
         # random placement of Apple
+        with open('src/object_dict.json') as f:
+            object_dict = json.load(f)
         for obj in self.scene.objects_unfixed:
             obj.place_randomly(object_dict[obj.name])
+            print(obj.name)
 
