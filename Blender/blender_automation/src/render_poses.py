@@ -29,14 +29,23 @@ RI.place_all() # manually placed objects
 
 # calling a script manually importing all objects and creating a scene
 start = time()
+
+# writing file for annotations
+write_annotation = open('annotations.csv', 'w')
 for i in range(50):
     RI.shuffle_objects()
     # finally render the scene to a file
     print('Starting rendering...')
-    RI.render(os.path.abspath(f'./workspace/test_{i}.jpg'))
+    file_path = os.path.abspath(f'./workspace/test_{i}.jpg')
+    RI.render(file_path)
     print(f'Image {i} completed')
     annotation = RI.scene.get_annotation()
-    print('annotation: ', annotation)
+    file_path = 
+    for ann in annotation:
+    	start = annotation[ann]
+    	end = annotation[ann]
+    	write_annotation.write(f'{file_path},{ann},{start[0]},{start[1]},{end[0]},{end[1]}\n')
+    # print('annotation: ', annotation)
 end = time()
 
 print(f'\n\n\n:: Total time elapsed in rendering and replacements: {end-start}')
