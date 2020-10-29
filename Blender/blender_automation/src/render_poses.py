@@ -36,11 +36,11 @@ for i in range(50):
     RI.shuffle_objects()
     # finally render the scene to a file
     print('Starting rendering...')
-    file_path = os.path.abspath(f'./workspace/test_{i}.jpg')
+    file_path = os.path.abspath(f'./workspace/outputs/test_{i}.jpg')
     RI.render(file_path)
     print(f'Image {i} completed')
     annotation = RI.scene.get_annotation()
-    file_path = 
+    file_path = os.path.abspath('./workspace/outputs/')
     for ann in annotation:
     	start = annotation[ann]
     	end = annotation[ann]

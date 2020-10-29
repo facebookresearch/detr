@@ -147,5 +147,5 @@ dmypy.json
 .pyre/
 
 #Blender objects
-Blender/blender_automation/workspace/
-Blender/workspace/
+Blender/blender_automation/workspace/objects
+Blender/blender_automation/workspace/outputs

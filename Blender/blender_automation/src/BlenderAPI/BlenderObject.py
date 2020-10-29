@@ -1,6 +1,7 @@
 import bpy, bmesh
 import mathutils as mathU
 from mathutils.bvhtree import BVHTree
+from math import pi
 import os
 import random
 from time import time
@@ -102,11 +103,15 @@ class BlenderObject(object):
         y_lims = [-0.4206 + dim_y/2, 0.025957 - dim_y/2]
         retry_tracker = True
         while retry_tracker == True:
-            print(f'\n{self.name} Dimensions:\n{self.reference.dimensions}')
-            z_temp = find_z_coord(self.name, origin_center=params['origin']=='CENTER', shelf_num=random.choice(params['shelves']))
+            #print(f'\n{self.name} Dimensions:\n{self.reference.dimensions}')
+            #Generate random X,Y,Z coords
             x_temp = random.uniform(x_lims[0], x_lims[1])
             y_temp = random.uniform(y_lims[0], y_lims[1])
+            z_temp = find_z_coord(self.name, origin_center=params['origin']=='CENTER', shelf_num=random.choice(params['shelves']))
             self.set_location(x=x_temp, y=y_temp, z=z_temp)
+            #rotate around unconstrained axis. Will need more robust logic for more than 1 axis
+            rotation = [axis*random.uniform(0, 2*pi) for axis in params['unconstrained_axis']]
+            self.set_euler_rotation(rotation[0], rotation[1], rotation[2])
             # calling a class method to check if the object is intersecting with others
             retry_tracker = self.is_intersecting()
 

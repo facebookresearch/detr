@@ -61,8 +61,8 @@ class BlenderScene(object):
             self.reference.cycles.samples = 512
             self.reference.cycles.transparent_max_bounces = 24
             self.reference.cycles.max_bounces = 24
-            self.reference.render.tile_x = 512
-            self.reference.render.tile_y = 512
+            self.reference.render.tile_x = 64
+            self.reference.render.tile_y = 64
             self.reference.render.resolution_x = 400
             self.reference.render.resolution_y = 600
         # self.reference.render.use_persistent_reference = True
@@ -173,7 +173,6 @@ class BlenderScene(object):
             self.reference,
             self.camera.reference,
             bpy.context.scene.cursor.location)
-        print("2D Coords:", co_2d)
 
         # If you want pixel coords
         render_scale = self.reference.render.resolution_percentage / 100
