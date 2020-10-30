@@ -52,13 +52,21 @@ lettuce = {
     'unconstrained_axis': [0, 0, 1],
     'label_cat': 'n_leafy_vegetable',
 }
-tomatos = {
+tomato = {
     'shelves': [1, 2, 3],
     'path': os.path.join(base_path, "tomato/Tomato_v1.obj"),
     'origin': 'CENTER',
     'scale_factor': 0.009365,
     'unconstrained_axis': [0, 0, 1],
     'label_cat': 'n_tomato',
+}
+beer_gambrinus = {
+    'shelves': [1, 2, 3],
+    'path': os.path.join(base_path, "beer_gambrinus/gambrinus.obj"),
+    'origin': 'CENTER',
+    'scale_factor': 0.02233,
+    'unconstrained_axis': [0, 0, 1],
+    'label_cat': 'n_bottle_beer',
 }
 
 #Combine into one dict
@@ -67,7 +75,8 @@ dict_temp = {
     'manzana2': apple,
     'grapes_1': grapes,
     'LettuceRomaine': lettuce,
-    'Tomato_v1': tomatos
+    'Tomato_v1': tomatos,
+    'gambrinus': beer_gambrinus
 }
 
 with open("object_dict.json","w") as f:

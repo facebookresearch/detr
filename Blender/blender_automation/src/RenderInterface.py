@@ -85,7 +85,7 @@ class RenderInterface(object):
 
     def place_all(self, ):
         """
-        Place all items are origin. Items can then be shuffled for n iterations and rendered for each placement.
+        Place all items at origin. Items can then be shuffled for n iterations and rendered for each placement.
         """
         #Json generated from jupyter NB, imports as dataframe
         #index by object name
@@ -108,14 +108,23 @@ class RenderInterface(object):
 
         for key in object_dict.keys():
             sc_fact = object_dict[key]['scale_factor']
-            scale = [sc_fact, sc_fact, sc_fact]
+            scale = [sc_fact] * 3
             self.scene.import_object(filepath=object_dict[key]['path'], scale=scale)
+
+        #Sometimes items will move without their origin. Trying to clear/reset origin on import
+        #Don't want it to apply to fridge though
+        #force update first, due to some overwrites on import from original state
+        #bpy.context.view_layer.update()
+        #for obj in self.scene.objects_unfixed:        
+        #    obj.origin_clear()
+        #    obj.origin_set(type='GEOMETRY_ORIGIN', center='MEDIAN')
 
     def shuffle_objects(self, ):
         # random placement of Apple
         with open('src/object_dict.json') as f:
             object_dict = json.load(f)
         for obj in self.scene.objects_unfixed:
+            obj.set_location(0, 0, 0)
             obj.place_randomly(object_dict[obj.name])
             print(obj.name)
 
