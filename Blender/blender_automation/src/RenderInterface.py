@@ -23,7 +23,12 @@ class RenderInterface(object):
         except:
             print("Warning: CUDA device not detected, using CPU instead!", file=sys.stderr)
         self.scene = BlenderScene(bpy.data.scenes[0])
-        bpy.ops.object.camera_add()
+        ## directly giving in the reference of blender object
+        # cube = BlenderObject(reference = bpy.data.objects['Cube'])
+        # fetching the object in blender using the object name
+        cube = BlenderObject(name='Cube')
+        cube.set_scale((2,2,2)) #[EXPERIMENTAL]
+        cube.delete()
         cam = BlenderCamera(bpy.data.objects['Camera'])
         self.scene.add_camera(cam)
         self.scene.set_render(resolution, samples, set_high_quality=True)
