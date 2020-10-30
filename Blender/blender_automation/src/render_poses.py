@@ -25,7 +25,7 @@ from RenderInterface import RenderInterface
 # Creating a RenderInterface which would be doing all the importing and
 # placement of the objects, along with the scene/rendering setup
 RI = RenderInterface(num_images=1, resolution=1000)
-RI.place_all() # manually placed objects
+RI.place_all(repeat_objects=True)
 
 # calling a script manually importing all objects and creating a scene
 start = time()
@@ -33,12 +33,18 @@ start = time()
 # writing file for annotations
 write_annotation = open('annotations.csv', 'w')
 for i in range(50):
+    single_img_time = time()
     RI.shuffle_objects()
-    # finally render the scene to a file
-    print('Starting rendering...')
+    shuffle_time = time()
+
+    # Render the scene to a file
+    print(f'Starting rendering on image {i}')
     file_path = os.path.abspath(f'./workspace/outputs/test_{i}.jpg')
     RI.render(file_path)
-    print(f'Image {i} completed')
+    single_img_time_end = time()
+    print(f'Image {i} completed in {single_img_time_end - single_img_time} s. Object shuffling took {shuffle_time - single_img_time} s.')
+
+    #annotation creation
     annotation = RI.scene.get_annotation()
     file_path = os.path.abspath('./workspace/outputs/')
     for ann in annotation:
