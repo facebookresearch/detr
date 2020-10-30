@@ -26,36 +26,31 @@ start = time()
 # writing file for annotations
 write_annotation = open('annotations.csv', 'w')
 
-#Nested loops to have images rechoose random repeat quantities through run
-for n in range(20):
-    # Creating a RenderInterface which would be doing all the importing and
-    # placement of the objects, along with the scene/rendering setup
-    delete_all()
-    RI = RenderInterface(num_images=1, resolution=1000)
-    RI.place_all(repeat_objects=True)
-    
-    imgs_per_repeat = 30
-    for i in range(imgs_per_repeat):
-        index = i + i*imgs_per_repeat#total images in run
-        single_img_time = time()
-        RI.shuffle_objects()
-        shuffle_time = time()
+# Creating a RenderInterface which would be doing all the importing and
+# placement of the objects, along with the scene/rendering setup
+RI = RenderInterface(num_images=1, resolution=1000)
+RI.place_all(repeat_objects=True)
 
-        # Render the scene to a file
-        print(f'Starting rendering on image {i}')
-        file_path = os.path.abspath(f'./workspace/outputs/test_{i}.jpg')
-        RI.render(file_path)
-        single_img_time_end = time()
-        print(f'Image {index} completed in {single_img_time_end - single_img_time} s. Object shuffling took {shuffle_time - single_img_time} s.')
+for i in range(500):
+    single_img_time = time()
+    RI.shuffle_objects()
+    shuffle_time = time()
 
-        #annotation creation
-        annotation = RI.scene.get_annotation()
-        file_path = os.path.abspath('./workspace/outputs/')
-        for ann in annotation:
-        	start = annotation[ann]
-        	end = annotation[ann]
-        	write_annotation.write(f'{file_path},{ann},{start[0]},{start[1]},{end[0]},{end[1]}\n')
-        # print('annotation: ', annotation)
+    # Render the scene to a file
+    print(f'Starting rendering on image {i}')
+    file_path = os.path.abspath(f'./workspace/outputs/test_{i}.jpg')
+    RI.render(file_path)
+    single_img_time_end = time()
+    print(f'Image {i} completed in {single_img_time_end - single_img_time} s. Object shuffling took {shuffle_time - single_img_time} s.')
+
+    #annotation creation
+    annotation = RI.scene.get_annotation()
+    file_path = os.path.abspath('./workspace/outputs/')
+    for ann in annotation:
+    	start = annotation[ann]
+    	end = annotation[ann]
+    	write_annotation.write(f'{file_path},{ann},{start[0]},{start[1]},{end[0]},{end[1]}\n')
+    # print('annotation: ', annotation)
 
 end = time()
 print(f'\n\n\n:: Total time elapsed in rendering and replacements: {end-start}')
