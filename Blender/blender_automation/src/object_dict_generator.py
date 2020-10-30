@@ -42,7 +42,7 @@ apple = {
     'import_rotations': [0, 0, 0],
     'unconstrained_axis': [0, 0, 1],
     'label_cat': 'n_apple',
-    'max_repeats': 3,
+    'max_repeats': 1,
 }
 grapes = {
     'shelves': [1, 2, 3],

@@ -113,7 +113,8 @@ class BlenderObject(object):
         #hardcoded numbers for shelf width of base fridge model, offset by item width
         y_lims = [-0.4206 + dim_y/2, 0.025957 - dim_y/2]
         retry_tracker = True
-        while retry_tracker == True:
+        attempts = 0
+        while retry_tracker == True and attempts < 9:
             print(f'\n{self.name} Dimensions:\n{self.reference.dimensions}')
             #Generate random X,Y,Z coords
             x_temp = random.uniform(x_lims[0], x_lims[1])
@@ -122,6 +123,9 @@ class BlenderObject(object):
             self.set_location(x=x_temp, y=y_temp, z=z_temp)
             # calling a class method to check if the object is intersecting with others
             retry_tracker = self.is_intersecting()
+            attempts +=1
+            if attempts == 9:#place at origin if too many tries, removes from render for this image. 
+                self.set_location(0,0,0)
 
     def set_euler_rotation(self, x, y, z):
         ''' set euler orientation for the object in the scene '''
@@ -197,20 +201,21 @@ class BlenderObject(object):
             raise Exception('Object is of not MESH type, hence can\'t find \
                     intersection with other MEST type objects')
         start = time()
+        #object calcs moved outside loop where possible
+        bm1 = bmesh.new()
+        bm1.from_mesh(self.reference.data)
+        bm1.transform(self.reference.matrix_world)
+        self_BVHtree = BVHTree.FromBMesh(bm1)
         for obj in bpy.context.scene.objects:
             if obj.name == self.name or not obj.type == 'MESH' or 'refrigerator' in  obj.name:
                 continue
             # initialize bmesh objects
-            bm1 = bmesh.new()
             bm2 = bmesh.new()
             # fill bmesh data from objects
-            bm1.from_mesh(self.reference.data)
             bm2.from_mesh(obj.data)
             # transform needed to check intersection
-            bm1.transform(self.reference.matrix_world)
             bm2.transform(obj.matrix_world)
             # make BVH tree from BMesh of objects
-            self_BVHtree = BVHTree.FromBMesh(bm1)
             obj_BVHtree = BVHTree.FromBMesh(bm2)
             # get intersection
             intersection = self_BVHtree.overlap(obj_BVHtree)
