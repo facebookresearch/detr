@@ -78,6 +78,8 @@ class BlenderObject(object):
                  reference that blender uses for the object. Ex: bpy.data.objects['model_X'] or bpy.context.scene.objects[0]
              name : string (optional)
                  name of the imported model which could be used for refering the actual bpy objects like `bpy.data.objects['name']
+             parent : string (optional)
+                 name of the imported model in case an object is imported multiple times, then the original name would be require to fetch the object parameters like rotation lock, which shelf to be used, NOTE: highly specific to our use case that is placement in the fridge
 
         Methods:
             __init__(location=(), orientation=(), scale=(), refernece=None, name=None, filepath=None, overwrite=True, **kwargs):
@@ -144,6 +146,7 @@ class BlenderObject(object):
         else:
             self.reference = reference
         self.name = self.reference.name
+        self.parent = self.name.split('.')[0]
 
     def blender_create_operations(self, ):
         ''' Implemented in child classes which actually use this feature. Example: light, camera '''

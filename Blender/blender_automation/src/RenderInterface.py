@@ -174,11 +174,6 @@ class RenderInterface(object):
             object_dict = json.load(f)
         for obj in self.scene.objects_unfixed:
             obj.set_location(0, 0, 0)
-            #bad hack for multiple object placement, will break for max_repeat>9
-            if '.00' in obj.name:
-                obj_name = obj.name[:-4]
-            else:
-                obj_name = obj.name
-            obj.place_randomly(object_dict[obj_name])
-            print(obj.name)
+            obj.place_randomly(object_dict[obj.parent])
+            print(f'\"{obj.name}\" successfully placed randomly, parameters taken from the params of object \"{obj.parent}\"')
 
