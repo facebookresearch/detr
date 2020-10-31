@@ -83,14 +83,15 @@ class RenderInterface(object):
         self.scene.camera.set_location(0, -2.5, 2)
         self.scene.camera.set_euler_rotation(1.26929, 0.0138826, -0.120164)
 
-    def place_all(self, ):
+    def place_all(self, repeat_objects=False):
         """
-        Place all items are origin. Items can then be shuffled for n iterations and rendered for each placement.
+        Place all items at origin. Items can then be shuffled for n iterations and rendered for each placement.
         """
         #Json generated from jupyter NB, imports as dataframe
         #index by object name
         #available params are shelves, path, origin, scale_factor
         #Not sure best place to put this line
+
         with open('src/object_dict.json') as f:
             object_dict = json.load(f)
 
@@ -105,17 +106,33 @@ class RenderInterface(object):
         # changing scene/render conditions camera parameters
         self.scene.camera.set_location(0, -1.75, 1.75)
         self.scene.camera.set_euler_rotation(1.45, 0, 0)
+        
+        if repeat_objects:
+            for key in object_dict.keys():
+                repeats = random.randint(1,object_dict[key]['max_repeats'])
+                print(f'{key} will be printed {repeats} times')
+                for _ in range(repeats):
+                    sc_fact = object_dict[key]['scale_factor']
+                    scale = [sc_fact] * 3
+                    self.scene.import_object(filepath=object_dict[key]['path'], scale=scale, orientation=object_dict[key]['import_rotations'])
+        else:
+            for key in object_dict.keys():
+                sc_fact = object_dict[key]['scale_factor']
+                scale = [sc_fact] * 3
+                self.scene.import_object(filepath=object_dict[key]['path'], scale=scale, orientation=object_dict[key]['import_rotations'])
 
-        for key in object_dict.keys():
-            sc_fact = object_dict[key]['scale_factor']
-            scale = [sc_fact, sc_fact, sc_fact]
-            self.scene.import_object(filepath=object_dict[key]['path'], scale=scale)
 
     def shuffle_objects(self, ):
         # random placement of Apple
         with open('src/object_dict.json') as f:
             object_dict = json.load(f)
         for obj in self.scene.objects_unfixed:
-            obj.place_randomly(object_dict[obj.name])
+            obj.set_location(0, 0, 0)
+            #bad hack for multiple object placement, will break for max_repeat>9
+            if '.00' in obj.name:
+                obj_name = obj.name[:-4]
+            else:
+                obj_name = obj.name
+            obj.place_randomly(object_dict[obj_name])
             print(obj.name)
 

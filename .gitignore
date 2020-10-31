@@ -149,3 +149,4 @@ dmypy.json
 #Blender objects
 Blender/blender_automation/workspace/objects
 Blender/blender_automation/workspace/outputs
+Blender/blender_automation/annotations.csv

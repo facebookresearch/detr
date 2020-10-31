@@ -127,6 +127,7 @@ class BlenderScene(object):
         if not fixed:
             self.add_object_unfixed(new_obj)
         else : self.add_object_fixed(new_obj)
+        bpy.ops.object.transform_apply(location=False, rotation=True, scale=False)
         return new_obj
 
     def delete_all(self, ):
