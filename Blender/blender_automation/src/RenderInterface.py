@@ -1,5 +1,6 @@
-''' RenderInterface class provides the method to create a scene from scratch,
-Placing the objects in the scene along with their own manipulations '''
+''' RenderInterface class provides the necessary high level  methods to create
+    a scene from scratch in Blender, Placing the objects in the scene along with
+    their own manipulations '''
 import bpy
 import os
 import sys
@@ -9,12 +10,47 @@ import json
 from BlenderAPI import *
 
 class RenderInterface(object):
-    def __init__(self, num_images=None, resolution=300, samples=128):
-        self.num_images = num_images # not have used yet
+    ''' RenderInterface Class represents the command line toolkit like modules that
+        can be used in writing scripts to create a scene, and automate its manipulation
+        Attributes:
+            scene: BlenderScene Class Object
+                BlenderScene Class object which can manage all the objects and the scene rendering configuration
+        Methods:
+            __init__(resolution=300, samples=128)
+                Constructor for the Class RenderInterface that initialize the Object, set up Blender with class method `setip_blender()`
+            setup_blender(resolution, sample)
+                prepare the blender scene to be edited, removes default Cube object, add camera to the BlenderScene object, set render configurations
+            render(render_path)
+                Calls BlenderScene Class method `render_to_file` to render the scene and save the generated image to a file
+            dry_run()
+                Complete manual scripts for testing modules, no part in automation
+            place_all(repeat_objects=False)
+                It's more like Import All objects, at the origin of the 3d space according to a parameters passed as a JSON file, refer to the method's documentation for info on how to create JSON file for parameters
+            shuffle_objects()
+                Shuffle Objects in the Scene with the constraints passed as a JSON file, Look at the method documentation for information about parameters passed as JSON file
+    '''
+    def __init__(self, resolution=300, samples=128):
+        ''' RenderInterface Class Object constructor, initializes scene, and setup rendering configuration
+            Parameters:
+                resolution: int, optional
+                    Resolution for the rendered image need to be configured in Blender Rendering settings
+                    Default is 300
+                samples: int, optional
+                    Number of samples to be rendered, Default is 128. NOTE: Not being used as of now
+        '''
         self.scene = None
         self.setup_blender(resolution, samples)
     
     def setup_blender(self, resolution, samples):
+        ''' Method to setup the parameters in rendering configuration in Blender, called once in the constructor
+            Clears up the default cube in the blender scene when initialized for the first time, add camera to
+            Blender Scene object/Attribute of RenderInterface class object.
+            Parameters:
+                resolution: int
+                    resolution to be set in rendering setting for image creation of the scene
+                sample: int
+                    Number of samples to be generated in the scene
+        '''
         C = bpy.context
         C.scene.render.engine='CYCLES'
         try:
@@ -27,7 +63,6 @@ class RenderInterface(object):
         # cube = BlenderObject(reference = bpy.data.objects['Cube'])
         # fetching the object in blender using the object name
         cube = BlenderObject(name='Cube')
-        cube.set_scale((2,2,2)) #[EXPERIMENTAL]
         cube.delete()
         cam = BlenderCamera(bpy.data.objects['Camera'])
         self.scene.add_camera(cam)
@@ -35,10 +70,16 @@ class RenderInterface(object):
 
 
     def render(self, render_path):
+        ''' Class Method to render the Blender Scene into an image and write it in the file with the given path
+            Parameters:
+                render_path: string
+                    render image into the given parameter `render_path`, by calling BlenderScene Class method `render_to_file`
+        '''
         self.scene.render_to_file(render_path)
 
     def dry_run(self, ):
-        ''' Testing building a scene by manual placement'''
+        ''' Testing building a scene by manual placement
+        '''
         #Json generated from jupyter NB, imports as dataframe
         #index by object name
         #available params are shelves, path, origin, scale_factor
@@ -86,6 +127,10 @@ class RenderInterface(object):
     def place_all(self, repeat_objects=False):
         """
         Place all items at origin. Items can then be shuffled for n iterations and rendered for each placement.
+        Parameters:
+            repeat_objects: Bool
+                if True, Objects will be repeated according to the parameters set in JSON file
+                otherwise, each object will be spawned only once in the Blender Scene
         """
         #Json generated from jupyter NB, imports as dataframe
         #index by object name
@@ -123,7 +168,8 @@ class RenderInterface(object):
 
 
     def shuffle_objects(self, ):
-        # random placement of Apple
+        ''' Class Method to shuffle all the objects keeping them in the constraint mentioned in JSON file containing object parameters.
+        '''
         with open('src/object_dict.json') as f:
             object_dict = json.load(f)
         for obj in self.scene.objects_unfixed:
