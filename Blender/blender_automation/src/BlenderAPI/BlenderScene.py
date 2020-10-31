@@ -9,13 +9,10 @@ class BlenderScene(object):
         Attributes:
             lambs: list
                 list containing lambs in the scene
-            background: None #TODO deprecated
             object_fixed: list
                 list containing the objects which are not intended to place randomly to create differnt scene
             object_unfixed: list
                 list containing the objects which are place randomly in each iteration to create different scene in blender
-            subjects: #TOTO deprecated
-            subjects_bot: #TODO deprecated
             reference : blender reference object
                 blender object used for reference of scene in context / bpy.context.scene
 
@@ -40,6 +37,7 @@ class BlenderScene(object):
                 convert point in 3d space in the 2d space projected to the scene camera
             get_annotations():
                 generate annotation for all the objects in the list object_unfixed in the format filepath, obj_name, top_left_corner, right_bottom_corner
+            #TODO 3 more method to be documented here, add_camera(), add_lamp(), delete_lamp()
     '''
     def __init__(self, reference):
         ''' Constructor, initilizes BlenderScene object with it's appropriate parameters and attributes
@@ -47,12 +45,9 @@ class BlenderScene(object):
                 reference: bpy data reference / bpy.context.scene
         '''
         self.lambs = []
-        self.background = None #TODO Deprecate not in use
         self.objects_fixed = [] 
         self.objects_unfixed = []
         self.camera = None
-        # self.subjects = []
-        # self.subjects_bot = []
         self.reference = reference #bpy.data.scenes[0] or bpy.context.scene
 
     def set_render(self, resolution=(300, 300), samples=128, set_high_quality=False):
@@ -136,17 +131,11 @@ class BlenderScene(object):
             obj.delete()
         for obj in self.objects_unfixed:
             obj.delete()
-        for subject in self.subject:
-            subject.delete()
-        self.subject = []
-        for subject in self.subject_bot:
-            subject.delete()
-        self.subjects = []
-        self.subjects_bot = []
         self.remove_lambs
         self.objects_fixed = []
         self.objects_unfixed = []
         # doing it all again... all the objects are deleted by their respective delete() call
+        # for the peace of mind I guess
         bpy.ops.object.select_all(action='SELECT')
         bpy.ops.object.delete()
         # deleting Orphan reference blocks and mesh material
@@ -184,31 +173,14 @@ class BlenderScene(object):
         self.reference.render.filepath = file_path
         bpy.ops.render.render(write_still=True)
 
-    #TODO: NOT NEEDED
-    def add_background(self, background):
-        self.background = backgroud
-
     #TODO: Update
     def add_camera(self, camera):
         self.camera = camera
-
-    #TODO: Not Needed
-    def add_subject(self, subject, subject_bot=None):
-        self.subjects.append(subject)
-        self.subjects_bot.append(subject_bot)
 
     #TODO update
     def add_lambs(self, lamb):
         self.lamb.append(lamb)
 
-    #TODO: Not Needed
-    def remove_subject(self, ):
-        for subject in self.subjects:
-            subject.delete()
-        for subject_bot in self.subjects_boy:
-            subject_bot.delete()
-        self.subjects = []
-        self.subjects_bot = []
     #TODO: might not need
     def remove_lamps(self, ):
         for lamp in self.lamps:
