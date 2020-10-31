@@ -29,27 +29,27 @@ class RenderInterface(object):
             shuffle_objects()
                 Shuffle Objects in the Scene with the constraints passed as a JSON file, Look at the method documentation for information about parameters passed as JSON file
     '''
-    def __init__(self, resolution=300, samples=128):
+    def __init__(self, resolution=(300, 300), samples=128, set_high_quality=False):
         ''' RenderInterface Class Object constructor, initializes scene, and setup rendering configuration
             Parameters:
-                resolution: int, optional
+                resolution: tuple(int, int), optional
                     Resolution for the rendered image need to be configured in Blender Rendering settings
-                    Default is 300
+                    Default is (300, 300)
                 samples: int, optional
-                    Number of samples to be rendered, Default is 128. NOTE: Not being used as of now
+                    Number of samples to be rendered for each pixel, Default is 128.
         '''
         self.scene = None
-        self.setup_blender(resolution, samples)
+        self.setup_blender(resolution, samples, set_high_quality)
     
-    def setup_blender(self, resolution, samples):
+    def setup_blender(self, resolution, samples, set_high_quality):
         ''' Method to setup the parameters in rendering configuration in Blender, called once in the constructor
             Clears up the default cube in the blender scene when initialized for the first time, add camera to
             Blender Scene object/Attribute of RenderInterface class object.
             Parameters:
-                resolution: int
+                resolution: tuple(int, int)
                     resolution to be set in rendering setting for image creation of the scene
                 sample: int
-                    Number of samples to be generated in the scene
+                    Number of samples to be generated for each pixel in the rendering of the scene.
         '''
         C = bpy.context
         C.scene.render.engine='CYCLES'
@@ -66,7 +66,7 @@ class RenderInterface(object):
         cube.delete()
         cam = BlenderCamera(bpy.data.objects['Camera'])
         self.scene.add_camera(cam)
-        self.scene.set_render(resolution, samples, set_high_quality=True)
+        self.scene.set_render(resolution=resolution, samples=samples, set_high_quality=set_high_quality)
 
 
     def render(self, render_path):

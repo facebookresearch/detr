@@ -22,7 +22,7 @@ class BlenderScene(object):
         Methods:
             __init__(reference):
                 initialize the class object with its appropriate paramters with taking blender refernece object as argument
-            set_render(resolution=300, sample=128, set_high_quality=False):
+            set_render(resolution=(300, 300), sample=128, set_high_quality=False):
                 set the rendering attributes for the redering process in blender like resolution, engine type, cycles count
             add_object_fixed(obj):
                 add BlenderObject class object into the list of the fixed object maintained by the BlenderScene class object
@@ -55,13 +55,13 @@ class BlenderScene(object):
         # self.subjects_bot = []
         self.reference = reference #bpy.data.scenes[0] or bpy.context.scene
 
-    def set_render(self, resolution=300, samples=128, set_high_quality=False):
+    def set_render(self, resolution=(300, 300), samples=128, set_high_quality=False):
         ''' Setting up the scene rendering configuration 
             Parameters:
-                resolution: int
-                    resolution of the image, default is 300. Can be changed at later stage while actually executing rendering command
-                sample: int
-                    NOT YET USED, intended for the number of images to be generated for the single subject
+                resolution: tuple(int, int), optional
+                    resolution of the image, default is (300, 300)
+                sample: int, optional
+                    Number of samples to render for each pixel, anti-aliasing, default is 128 
                 set_high_quality: bool, optional
                     if True, render configuration sets to a bit higher quality like more resolution and all.
                     Default is False
@@ -75,8 +75,8 @@ class BlenderScene(object):
         self.reference.cycles.device='GPU'
         self.reference.render.tile_x = 512
         self.reference.render.tile_y = 512
-        self.reference.render.resolution_x = resolution
-        self.reference.render.resolution_y = resolution
+        self.reference.render.resolution_x = resolution[0]
+        self.reference.render.resolution_y = resolution[1]
         self.reference.render.resolution_percentage = 100
         if set_high_quality:
             self.reference.cycles.samples = 512
@@ -84,8 +84,8 @@ class BlenderScene(object):
             self.reference.cycles.max_bounces = 24
             self.reference.render.tile_x = 64
             self.reference.render.tile_y = 64
-            self.reference.render.resolution_x = 400
-            self.reference.render.resolution_y = 600
+            self.reference.render.resolution_x = resolution[0]
+            self.reference.render.resolution_y = resolution[1]
         # self.reference.render.use_persistent_reference = True
 
 

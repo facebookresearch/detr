@@ -1,7 +1,8 @@
 ''' Main Script that will execute in Blender Python environment
     Taking levarage of all the assets, of automatic placement of
     the objects and rendering synthetic data to the image files
-    along with the object annotation for the object detection. '''
+    along with the object annotation for the object detection.
+'''
 
 import sys
 import os
@@ -31,7 +32,7 @@ write_annotation = open('annotations.csv', 'w')
 
 # Creating a RenderInterface which would be doing all the importing and
 # placement of the objects, along with the scene/rendering setup
-RI = RenderInterface(num_images=1, resolution=1000)
+RI = RenderInterface(resolution=(400,600), samples=128, set_high_quality=True)
 RI.place_all(repeat_objects=True)
 
 for i in range(500):
