@@ -54,6 +54,7 @@ for i in range(500):
     for ann in annotation:
     	left_top = annotation[ann]
     	right_bottom = annotation[ann]
+      #TODO import params JSON file and convert 3d model object name to the actual label, Could be part of post annotation processing seperately
     	write_annotation.write(f'{file_path},{ann},{left_top[0]},{left_top[1]},{right_bottom[0]},{right_bottom[1]}\n')
 
 end = time()
