@@ -5,12 +5,23 @@ import mathutils as mathU
 from .BlenderObject import *
 
 class BlenderCamera(BlenderObject):
-    ''' BlenderCamera class provides the module for updating the camera geographical
-        location in the scene to get the different redered images of the scene'''
+    ''' BlenderCamera class inherited from BlenderObject class encapsulates the specific functions to change the geometrical configrations of the Camera
+        Attributes:
+        Methods:
+            spin(angle):
+                apply the quaternion rotation to the camera
+            face_towards(x, y, z):
+                apply the transformation to the camera such that it faces towards the point (x, y, z) in 3d space
+            blender_create_operations():
+                create a new camera in the blender scene
+        Note: Not being used actively, except the `blender_create_operation()`
+    '''
     def __init__(self, reference=None, **kwargs):
         super(BlenderCamera, self).__init__(reference=reference, **kwargs)
 
     def spin(self, angle):
+        ''' #TODO 
+        '''
         q = self.get_rot()
         focal_origin = mathU.Vector([0, 0, -1])
         T = q.to_matrix()
@@ -23,7 +34,12 @@ class BlenderCamera(BlenderObject):
         bpy.ops.object.camera_add()
     
     def face_towards(self, x, y, z):
-        ''' Direction manipulation of the caemra in the scene '''
+        ''' Direction manipulation of the caemra in the scene
+            Parameters:
+                x, y, z : float, float, float
+                    transform the camera such that it focuses on the point (x, y, z) in 3d space
+            #TODO update
+        '''
         target = mathU.Vector([x, y, z]) - mathU.Vector(self.reference.location)
         target.normalize()
         rot_origin = mathU.Vector([0, 0, -1])

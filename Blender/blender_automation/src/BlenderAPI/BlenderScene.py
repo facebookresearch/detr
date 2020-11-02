@@ -4,47 +4,63 @@ import bpy_extras
 # relative import from other classes
 from .BlenderObject import *
 
-class BlenderPlane(BlenderObject):
-    def __init__(self, **kwargs):
-        super(BlenderPlane, self).__init__(**kwargs)
-
-    def blender_create_operation(self, ):
-        bpy.ops.mesh.primitive_plane_add()
-
-class BlenderRoom(object):
-    def __init__(self, radius):
-        self.walls = []
-        self.walls.append(BlenderPlane(location=(-radius, 0, 0), scale=(radius, radius, radius), orientation=(90, 0, 1, 0)))
-        self.walls.append(BlenderPlane(location=(0, radius, 0), scale=(radius, radius, radius), orientation=(90, 1, 0, 0)))
-        self.walls.append(BlenderPlane(location=(0, 0, -radius), scale=(radius, radius, radius)))
-        self.walls.append(BlenderPlane(location=(radius, 0, 0), scale=(radius, radius, radius), orientation=(90, 0, 1, 0)))
-        self.walls.append(BlenderPlane(location=(0, -radius, 0), scale=(radius, radius, radius), orientation=(90, 1, 0, 0)))
-        self.walls.append(BlenderPlane(location=(0, 0, radius), scale=(radius, radius, radius)))
-
-    def delete(self, ):
-        for wall in self.walls:
-            wall.delete()
-        self.walls = []
-
 class BlenderScene(object):
-    ''' BlenderScene object handles the scene in blender, takes care of importing objects, managing them as a part of the scene
-        and manages the rendering configuration of the scene in blender from the class method set_render() '''
+    ''' BlenderScene object represents the Scene object of blender, encapsulates methods like spawning object, maintaing them in teh scene, along with the rendering parameters and finally rendering process
+        Attributes:
+            lambs: list
+                list containing lambs in the scene
+            object_fixed: list
+                list containing the objects which are not intended to place randomly to create differnt scene
+            object_unfixed: list
+                list containing the objects which are place randomly in each iteration to create different scene in blender
+            reference : blender reference object
+                blender object used for reference of scene in context / bpy.context.scene
+
+        Methods:
+            __init__(reference):
+                initialize the class object with its appropriate paramters with taking blender refernece object as argument
+            set_render(resolution=(300, 300), sample=128, set_high_quality=False):
+                set the rendering attributes for the redering process in blender like resolution, engine type, cycles count
+            add_object_fixed(obj):
+                add BlenderObject class object into the list of the fixed object maintained by the BlenderScene class object
+            add_object_unfixed(obj):
+                add BlenderObject class object into the list of the unfixed object maintened and used by BlenderScene object to create different geometrical configurations of object in the scene
+            import_object(filepath, location=(0,0,0), scale=(1,1,1), orientation=(0,0,0), overwrite=True, fixed=False):
+                import object from the 3d model file and create a BlenderObject class object for that, and accordingly add object in the list of fixed/unfixed object list maintained by BlendeScene object
+            delete_all():
+                delete everything in the scene in blender and in this class object
+            remove_object(obj):
+                remove object from the scene
+            render_to_file(filepath):
+                render 2d image of the 3d scene with the perspective of the scene camera
+            point_conversion(x, y, z):
+                convert point in 3d space in the 2d space projected to the scene camera
+            get_annotations():
+                generate annotation for all the objects in the list object_unfixed in the format filepath, obj_name, top_left_corner, right_bottom_corner
+            #TODO 3 more method to be documented here, add_camera(), add_lamp(), delete_lamp()
+    '''
     def __init__(self, reference):
+        ''' Constructor, initilizes BlenderScene object with it's appropriate parameters and attributes
+            Parameters:
+                reference: bpy data reference / bpy.context.scene
+        '''
         self.lambs = []
-        self.background = None # not in use
         self.objects_fixed = [] 
         self.objects_unfixed = []
-        self.camera = None # not in any use in particular
-
-        # self.subjects = []
-        # self.subjects_bot = []
-        # [NEED TO BE RESOLVED] : Note that we might not need the subjects and objects seperated, as we are considering all the items in the scene as objects.
-        # Thinking about having the fridge as Fixed object and rest are the un-fixed objects...
-        
+        self.camera = None
         self.reference = reference #bpy.data.scenes[0] or bpy.context.scene
 
-    def set_render(self, resolution=300, samples=128, set_high_quality=False):
-        ''' Setting up the scene rendering configuration '''
+    def set_render(self, resolution=(300, 300), samples=128, set_high_quality=False):
+        ''' Setting up the scene rendering configuration 
+            Parameters:
+                resolution: tuple(int, int), optional
+                    resolution of the image, default is (300, 300)
+                sample: int, optional
+                    Number of samples to render for each pixel, anti-aliasing, default is 128 
+                set_high_quality: bool, optional
+                    if True, render configuration sets to a bit higher quality like more resolution and all.
+                    Default is False
+        '''
         self.reference.cycles.film_transparent=True
         self.reference.cycles.max_bounces = 1
         self.reference.cycles.max_bounces = 1
@@ -54,8 +70,8 @@ class BlenderScene(object):
         self.reference.cycles.device='GPU'
         self.reference.render.tile_x = 512
         self.reference.render.tile_y = 512
-        self.reference.render.resolution_x = resolution
-        self.reference.render.resolution_y = resolution
+        self.reference.render.resolution_x = resolution[0]
+        self.reference.render.resolution_y = resolution[1]
         self.reference.render.resolution_percentage = 100
         if set_high_quality:
             self.reference.cycles.samples = 512
@@ -63,22 +79,44 @@ class BlenderScene(object):
             self.reference.cycles.max_bounces = 24
             self.reference.render.tile_x = 64
             self.reference.render.tile_y = 64
-            self.reference.render.resolution_x = 400
-            self.reference.render.resolution_y = 600
+            self.reference.render.resolution_x = resolution[0]
+            self.reference.render.resolution_y = resolution[1]
         # self.reference.render.use_persistent_reference = True
 
 
     def add_object_fixed(self, obj):
-        ''' Add object in the list of fixed objects '''
+        ''' Add object in the list of fixed objects 
+            Parameter:
+                obj: BlenderObject
+                    add the BlenderObject class object in the list of fixed objects
+        '''
         self.objects_fixed.append(obj)
 
     def add_object_unfixed(self, obj):
-        ''' Add object in the list of un-fixed objects '''
+        ''' Add object in the list of un-fixed objects
+            Parameter:
+                obj: BlenderObject
+                    add the BlenderObject class object in the list of un-fixed objects
+        '''
         self.objects_unfixed.append(obj)
 
     def import_object(self, filepath, location=(0,0,0), scale=(1,1,1), \
             orientation=(0,0,0), overwrite=True, fixed=False):
-        ''' Importing object from the file along with their geometrical config '''
+        ''' Importing object from the file along with their geometrical config 
+            Parameters:
+                filepath: string
+                    Import 3d model from the file, currenlty supported model extensions: .obj, .dae
+                location: tuple(float, float, float), optional
+                    set the location of the imported model to the `location`
+                scale: tuple(float, float, float), optional
+                    set the scale of the imported 3d model to the `scale`
+                orientation: tuple(float, float, float), optional
+                    set the orientation of the imported 3d model to the `orientation`
+                overwrite: bool, optional
+                    If False, the model original configuration(written in model file) is kept unchanged. Default is True
+                fixed: bool, optional
+                    If True, the object is then added to the list of fixed objects in the scene, otherwise fixed in the list of unfixed objects in the scene. Default is False
+        '''
         new_obj = BlenderObject(filepath=filepath, scale=scale, \
             location=location, orientation=orientation, overwrite=overwrite)
         if not fixed:
@@ -88,22 +126,16 @@ class BlenderScene(object):
         return new_obj
 
     def delete_all(self, ):
-        ''' Clears up everything from the scene'''
+        ''' Clears up everything from the scene, absolutely everything'''
         for obj in self.objects_fixed:
             obj.delete()
         for obj in self.objects_unfixed:
             obj.delete()
-        for subject in self.subject:
-            subject.delete()
-        self.subject = []
-        for subject in self.subject_bot:
-            subject.delete()
-        self.subjects = []
-        self.subjects_bot = []
         self.remove_lambs
         self.objects_fixed = []
         self.objects_unfixed = []
         # doing it all again... all the objects are deleted by their respective delete() call
+        # for the peace of mind I guess
         bpy.ops.object.select_all(action='SELECT')
         bpy.ops.object.delete()
         # deleting Orphan reference blocks and mesh material
@@ -124,49 +156,50 @@ class BlenderScene(object):
                 bpy.reference.meshes.remove(block)
 
     def remove_object(self, obj):
-        ''' remove object from the scene and delete it's model data '''
+        ''' remove object from the scene and delete it's model data 
+            Parameters:
+                obj: BlenderObject
+                    remove the BlenderClass object `obj` from the Scene and delete it's model data
+        '''
         self.objects_unfixed.remove(obj)
         obj.delete()
  
     def render_to_file(self, file_path):
-        ''' save a rendered image to a file '''
+        ''' save a rendered image to a file
+            Parameters:
+                filepath: string
+                    relative or absolute file path to store the rendered image of the scene
+        '''
         self.reference.render.filepath = file_path
         bpy.ops.render.render(write_still=True)
 
-    # TODO: all the modules below haven't been in use yet... and might need update before using
-    # TODO: NOT NEEDED
-    def add_background(self, background):
-        self.background = backgroud
-
-    # TODO: Update
+    #TODO: Update
     def add_camera(self, camera):
         self.camera = camera
 
-    # TODO: Not Needed
-    def add_subject(self, subject, subject_bot=None):
-        self.subjects.append(subject)
-        self.subjects_bot.append(subject_bot)
-
-
+    #TODO update
     def add_lambs(self, lamb):
         self.lamb.append(lamb)
 
-        # TODO: Not Needed
-    def remove_subject(self, ):
-        for subject in self.subjects:
-            subject.delete()
-        for subject_bot in self.subjects_boy:
-            subject_bot.delete()
-        self.subjects = []
-        self.subjects_bot = []
-    
+    #TODO: might not need
     def remove_lamps(self, ):
         for lamp in self.lamps:
             lamp.delete()
         self.lamps = []
 
     def point_conversion(self, x, y , z):
-        ''' convert the 3d to  2d point from the perspective of camera of the scene '''
+        ''' convert the 3d to  2d point from the perspective of camera of the scene
+            Parameters:
+                x, y, z: float, float, float
+                    (x, y, z) represents the location of the point in the 3d space
+            Returns:
+                x, y, z: int, int, int
+                    (x, y) is the point in 2d space in perspective of the scene camera (self.caemra)
+                    -ve `z` means the point in 3d space is not in view of camera because of being behind the scene camera
+                    +ve `z` is just a normal point in view of camera in 3d space
+                    Note: Point could be out of view, the tuple (x, y) will be accordingly more positive than image dimensions
+                          or negative in case the points are above of view or left of scene camera view
+        '''
         if self.camera is None:
             raise Exception('No camera found in the scene for rendering')
         bpy.context.scene.cursor.location = (x, y, z)
@@ -190,6 +223,17 @@ class BlenderScene(object):
         # and if negative then the object is behind the camera and not visible
 
     def get_annotation(self, ):
+        '''
+        Generate annotations for the object in the list of unfixed objects in the scene
+        Note: Don't know to which extent this works... But what it is doing is that it's projecting every point of the bouding box of the object in 2d space, and then finding the min/max of x and y would lead to the bouding box in 2d space.
+              concern is that the 3d bounding box isn't efficient, and should be replaced to a more efficient bounding box which I believe is available in blenderPY #TODO need to update this
+        return:
+            dict():
+                dict structure is as follows:
+                annotation = {'object_name': [(top_left_x, top_left_y), (right_bottom_x, right_bottom_y)],
+                              ... ,
+                             }
+        '''
         annotation = {}
         for obj in self.objects_unfixed:
             dim_x = obj.reference.dimensions.x

@@ -1,5 +1,6 @@
-''' RenderInterface class provides the method to create a scene from scratch,
-Placing the objects in the scene along with their own manipulations '''
+''' RenderInterface class provides the necessary high level  methods to create
+    a scene from scratch in Blender, Placing the objects in the scene along with
+    their own manipulations '''
 import bpy
 import os
 import sys
@@ -9,12 +10,47 @@ import json
 from BlenderAPI import *
 
 class RenderInterface(object):
-    def __init__(self, num_images=None, resolution=300, samples=128):
-        self.num_images = num_images # not have used yet
+    ''' RenderInterface Class represents the command line toolkit like modules that
+        can be used in writing scripts to create a scene, and automate its manipulation
+        Attributes:
+            scene: BlenderScene Class Object
+                BlenderScene Class object which can manage all the objects and the scene rendering configuration
+        Methods:
+            __init__(resolution=300, samples=128)
+                Constructor for the Class RenderInterface that initialize the Object, set up Blender with class method `setip_blender()`
+            setup_blender(resolution, sample)
+                prepare the blender scene to be edited, removes default Cube object, add camera to the BlenderScene object, set render configurations
+            render(render_path)
+                Calls BlenderScene Class method `render_to_file` to render the scene and save the generated image to a file
+            dry_run()
+                Complete manual scripts for testing modules, no part in automation
+            place_all(repeat_objects=False)
+                It's more like Import All objects, at the origin of the 3d space according to a parameters passed as a JSON file, refer to the method's documentation for info on how to create JSON file for parameters
+            shuffle_objects()
+                Shuffle Objects in the Scene with the constraints passed as a JSON file, Look at the method documentation for information about parameters passed as JSON file
+    '''
+    def __init__(self, resolution=(300, 300), samples=128, set_high_quality=False):
+        ''' RenderInterface Class Object constructor, initializes scene, and setup rendering configuration
+            Parameters:
+                resolution: tuple(int, int), optional
+                    Resolution for the rendered image need to be configured in Blender Rendering settings
+                    Default is (300, 300)
+                samples: int, optional
+                    Number of samples to be rendered for each pixel, Default is 128.
+        '''
         self.scene = None
-        self.setup_blender(resolution, samples)
+        self.setup_blender(resolution, samples, set_high_quality)
     
-    def setup_blender(self, resolution, samples):
+    def setup_blender(self, resolution, samples, set_high_quality):
+        ''' Method to setup the parameters in rendering configuration in Blender, called once in the constructor
+            Clears up the default cube in the blender scene when initialized for the first time, add camera to
+            Blender Scene object/Attribute of RenderInterface class object.
+            Parameters:
+                resolution: tuple(int, int)
+                    resolution to be set in rendering setting for image creation of the scene
+                sample: int
+                    Number of samples to be generated for each pixel in the rendering of the scene.
+        '''
         C = bpy.context
         C.scene.render.engine='CYCLES'
         try:
@@ -27,18 +63,23 @@ class RenderInterface(object):
         # cube = BlenderObject(reference = bpy.data.objects['Cube'])
         # fetching the object in blender using the object name
         cube = BlenderObject(name='Cube')
-        cube.set_scale((2,2,2)) #[EXPERIMENTAL]
         cube.delete()
         cam = BlenderCamera(bpy.data.objects['Camera'])
         self.scene.add_camera(cam)
-        self.scene.set_render(resolution, samples, set_high_quality=True)
+        self.scene.set_render(resolution=resolution, samples=samples, set_high_quality=set_high_quality)
 
 
     def render(self, render_path):
+        ''' Class Method to render the Blender Scene into an image and write it in the file with the given path
+            Parameters:
+                render_path: string
+                    render image into the given parameter `render_path`, by calling BlenderScene Class method `render_to_file`
+        '''
         self.scene.render_to_file(render_path)
 
     def dry_run(self, ):
-        ''' Testing building a scene by manual placement'''
+        ''' Testing building a scene by manual placement
+        '''
         #Json generated from jupyter NB, imports as dataframe
         #index by object name
         #available params are shelves, path, origin, scale_factor
@@ -86,6 +127,10 @@ class RenderInterface(object):
     def place_all(self, repeat_objects=False):
         """
         Place all items at origin. Items can then be shuffled for n iterations and rendered for each placement.
+        Parameters:
+            repeat_objects: Bool
+                if True, Objects will be repeated according to the parameters set in JSON file
+                otherwise, each object will be spawned only once in the Blender Scene
         """
         #Json generated from jupyter NB, imports as dataframe
         #index by object name
@@ -123,16 +168,12 @@ class RenderInterface(object):
 
 
     def shuffle_objects(self, ):
-        # random placement of Apple
+        ''' Class Method to shuffle all the objects keeping them in the constraint mentioned in JSON file containing object parameters.
+        '''
         with open('src/object_dict.json') as f:
             object_dict = json.load(f)
         for obj in self.scene.objects_unfixed:
             obj.set_location(0, 0, 0)
-            #bad hack for multiple object placement, will break for max_repeat>9
-            if '.00' in obj.name:
-                obj_name = obj.name[:-4]
-            else:
-                obj_name = obj.name
-            obj.place_randomly(object_dict[obj_name])
-            print(obj.name)
+            obj.place_randomly(object_dict[obj.parent])
+            print(f'\"{obj.name}\" successfully placed randomly, parameters taken from the params of object \"{obj.parent}\"')
 

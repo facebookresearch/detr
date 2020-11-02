@@ -1,6 +1,8 @@
-''' Blender Script called from in the pipline to
-    Initiate the blender and following the script
-    , render images from the given objects. '''
+''' Main Script that will execute in Blender Python environment
+    Taking levarage of all the assets, of automatic placement of
+    the objects and rendering synthetic data to the image files
+    along with the object annotation for the object detection.
+'''
 
 import sys
 import os
@@ -9,26 +11,28 @@ import json
 import argparse
 from time import time
 
-temp_path = os.path.realpath(__file__)
-sys.path.append(os.path.dirname(temp_path))
+# adding module directory in the Blender Python Environmental PATH Variable
+MODULE_DIRECTORY = os.path.realpath(__file__)
+sys.path.append(os.path.dirname(MODULE_DIRECTORY))
 
 # To import python packages like pandas
 #TODO generalize this path
 #sys.path.append('/home/solus/anaconda3/lib/python3.8/site-packages')
 sys.path.append(r"C:\Users\nickh\anaconda3\Lib\site-packages")
 sys.path.append(os.getcwd())
-#print(sys.path)
-from utils import delete_all
+##TODO : [utils.delete_all] not being used, anyway it's written in BlenderScene Class as Class Method
+#from utils import delete_all
+
 from RenderInterface import RenderInterface
 
 start = time()
 
-# writing file for annotations
+# Open a file for writing object annotations
 write_annotation = open('annotations.csv', 'w')
 
 # Creating a RenderInterface which would be doing all the importing and
 # placement of the objects, along with the scene/rendering setup
-RI = RenderInterface(num_images=1, resolution=1000)
+RI = RenderInterface(resolution=(400,600), samples=128, set_high_quality=True)
 RI.place_all(repeat_objects=True)
 
 for i in range(500):
@@ -43,15 +47,15 @@ for i in range(500):
     single_img_time_end = time()
     print(f'Image {i} completed in {single_img_time_end - single_img_time} s. Object shuffling took {shuffle_time - single_img_time} s.')
 
-    #annotation creation
+    # Fetch annotation from rendered image
     annotation = RI.scene.get_annotation()
     file_path = os.path.abspath('./workspace/outputs/')
+    #TODO could be written directly in COCO format
     for ann in annotation:
-    	start = annotation[ann]
-    	end = annotation[ann]
-        #TODO import params JSON file and convert 3d model object name to the actual label, Could be part of post annotation processing seperately
-    	write_annotation.write(f'{file_path},{ann},{start[0]},{start[1]},{end[0]},{end[1]}\n')
-    # print('annotation: ', annotation)
+    	left_top = annotation[ann]
+    	right_bottom = annotation[ann]
+      #TODO import params JSON file and convert 3d model object name to the actual label, Could be part of post annotation processing seperately
+    	write_annotation.write(f'{file_path},{ann},{left_top[0]},{left_top[1]},{right_bottom[0]},{right_bottom[1]}\n')
 
 end = time()
 print(f'\n\n\n:: Total time elapsed in rendering and replacements: {end-start}')
