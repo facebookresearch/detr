@@ -47,6 +47,31 @@ def rotate(vector, quaternion):
     quanjugate.conjugate()
     return quaternion * vecternion * quanjugate
 
+def is1DOverlap(min1, max1, min2, max2):
+    if min1 >= max2 or min2 >= max1: return False
+    else: return True
+
+# TL contains is minimum of (x,y) and RB is maximum(x, y) in ractangle
+
+def is2DOverlap(min1, max1, min2, max2):
+    if len(min1) != 2 or len(max1) != 2 or len(min2) != 2 or len(max2) != 2:
+        raise Exception('Argument Expected 2d coordinates of left top points(min_x, min_y) and right bottom \
+                         points(max_x, max_y) of two rectangle, make sure the arguments are like min1, max1, min2, max2. \
+                         Got{min1, max1, min2, max2}')
+    if is1DOverlap(min1[0], max1[0], min2[0], max2[0]) and \
+       is1DOverlap(min1[1], max1[1], min2[1], max2[1]): return True
+    else return False
+
+def is3DOverlap(min1, max1, min2, max2):
+    if len(max1) != 3 or len(max1) != 3 or len(min2) != 3 or len(max2) != 3:
+        raise Exception('Argument Expected 3d coordinates of left top points(min_x, min_y, min_z) and right bottom \
+                         points(max_x, max_y, max_z) of two rectangle, make sure the arguments are like min1, max1, min2, max2. \
+                         Got{min1, max1, min2, max2}')
+    if is1Doverlap(min1[0], max1[0], min2[0], max2[0]) and \
+       is1Doverlap(min1[1], max1[1], min2[1], max2[1]) and \
+       is1Doverlap(min1[2], max1[2], min2[2], max2[2]) : return True
+    eles: return False
+
 # Default shelf heights match only current fridge item. 
 def find_z_coord(item_name, origin_center=True, shelf_num=1, shelf_heights=[1.2246, 1.5581, 1.7443]):
     """
@@ -277,40 +302,65 @@ class BlenderObject(object):
         elif self.filepath[-4:] == '.obj':
             bpy.ops.import_scene.obj(filepath=self.filepath)
 
-    def is_intersecting(self, ):
+    def is_intersecting(self, type='BOUNDING_BOX'):
         ''' Check whether the object is intersecting to any other object in the scene or not
             return: bool
                True : if object is intersecting/overlapping with other object of type 'MESH' in the scene
                False : otherwise
         '''
+        if not self.reference.type == 'MESH':
+            raise Exception('Object is of not MESH type, hence can\'t find intersection with other MEST type objects')
+
         #mesh matrix doesn't automatically update. Force update at beginning of call
         bpy.context.view_layer.update()
-        if not self.reference.type == 'MESH':
-            raise Exception('Object is of not MESH type, hence can\'t find \
-                    intersection with other MEST type objects')
+
         start = time()
-        #object calcs moved outside loop where possible
-        bm1 = bmesh.new()
-        bm1.from_mesh(self.reference.data)
-        bm1.transform(self.reference.matrix_world)
-        self_BVHtree = BVHTree.FromBMesh(bm1)
-        for obj in bpy.context.scene.objects:
-            if obj.name == self.name or not obj.type == 'MESH' or 'refrigerator' in  obj.name:
-                continue
-            # initialize bmesh objects
-            bm2 = bmesh.new()
-            # fill bmesh data from objects
-            bm2.from_mesh(obj.data)
-            # transform needed to check intersection
-            bm2.transform(obj.matrix_world)
-            # make BVH tree from BMesh of objects
-            obj_BVHtree = BVHTree.FromBMesh(bm2)
-            # get intersection
-            intersection = self_BVHtree.overlap(obj_BVHtree)
-            if intersection != []:
-                end = time()
-                print(f'[{self.name}] Intersection Found with {obj.name}  Time Elapsed: {(end-start)} seconds')
-                return True
+
+        if type == 'BOUNDING_BOX':
+            self_bound = self.reference.bound_box
+            _xyz = (self_bound[0][0], self_bound[0][1], self_bound[0][2])
+            # positive_negative : example x_yz : x is positive and y,z are negative
+            # z_xy = (self_bound[1][0], self_bound[1][1], self_bound[1][2])
+            # yz_x = (self_bound[2][0], self_bound[2][1], self_bound[2][2])
+            # y_xz = (self_bound[3][0], self_bound[3][1], self_bound[3][2])
+            # _xyz = (self_bound[4][0], self_bound[4][1], self_bound[4][2])
+            # xz_y = (self_bound[5][0], self_bound[5][1], self_bound[5][2])
+            # xyz_ = (self_bound[6][0], self_bound[6][1], self_bound[6][2])
+            # xy_z = (self_bound[7][0], self_bound[7][1], self_bound[6][2])
+            self_min_xyz = (self_bound[0][0], self_bound[0][1], self_bound[0][2])
+            self_max_xyz = (self_bound[6][0], self_bound[6][1], self_bound[6][2])
+            for obj in bpy.context.scene.objects:
+                if obj.type != 'MESH' or obj.name == self.name or 'refrigerator' in obj.name: continue
+                obj_bound = obj.reference.bound_box
+                obj_min_xyz = (obj_bound[0][0], obj_bound[0][1], obj_bound[0][2])
+                obj_max_xyz = (obj_bound[6][0], obj_bound[6][1], obj_bound[6][2])
+                if is3DOverlap(self_min_xyz, self_max_xyz, obj_min_xyz, obj_max_xyz):
+                    end = time()
+                    print(f'[{self.name}] Intersection Found with {obj.name}  Time Elapsed: {(end-start)} seconds')
+                    return True
+        else :
+            #object calcs moved outside loop where possible
+            bm1 = bmesh.new()
+            bm1.from_mesh(self.reference.data)
+            bm1.transform(self.reference.matrix_world)
+            self_BVHtree = BVHTree.FromBMesh(bm1)
+            for obj in bpy.context.scene.objects:
+                if obj.name == self.name or not obj.type == 'MESH' or 'refrigerator' in  obj.name:
+                    continue
+                # initialize bmesh objects
+                bm2 = bmesh.new()
+                # fill bmesh data from objects
+                bm2.from_mesh(obj.data)
+                # transform needed to check intersection
+                bm2.transform(obj.matrix_world)
+                # make BVH tree from BMesh of objects
+                obj_BVHtree = BVHTree.FromBMesh(bm2)
+                # get intersection
+                intersection = self_BVHtree.overlap(obj_BVHtree)
+                if intersection != []:
+                    end = time()
+                    print(f'[{self.name}] Intersection Found with {obj.name}  Time Elapsed: {(end-start)} seconds')
+                    return True
         end = time()
         print(f'[{self.name}] No Intersection Found  Time Elapsed: {(end-start)} seconds')
         return False
