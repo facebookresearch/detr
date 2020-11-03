@@ -42,7 +42,7 @@ for i in range(500):
 
     # Render the scene to a file
     print(f'Starting rendering on image {i}')
-    file_path = os.path.abspath(f'./workspace/outputs/test_{i}.jpg')
+    file_path = os.path.abspath(f'./workspace/outputs/image_{i}.jpg')
     RI.render(file_path)
     single_img_time_end = time()
     print(f'Image {i} completed in {single_img_time_end - single_img_time} s. Object shuffling took {shuffle_time - single_img_time} s.')

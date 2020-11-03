@@ -60,17 +60,17 @@ def is2DOverlap(min1, max1, min2, max2):
                          Got{min1, max1, min2, max2}')
     if is1DOverlap(min1[0], max1[0], min2[0], max2[0]) and \
        is1DOverlap(min1[1], max1[1], min2[1], max2[1]): return True
-    else return False
+    else: return False
 
 def is3DOverlap(min1, max1, min2, max2):
     if len(max1) != 3 or len(max1) != 3 or len(min2) != 3 or len(max2) != 3:
         raise Exception('Argument Expected 3d coordinates of left top points(min_x, min_y, min_z) and right bottom \
                          points(max_x, max_y, max_z) of two rectangle, make sure the arguments are like min1, max1, min2, max2. \
                          Got{min1, max1, min2, max2}')
-    if is1Doverlap(min1[0], max1[0], min2[0], max2[0]) and \
-       is1Doverlap(min1[1], max1[1], min2[1], max2[1]) and \
-       is1Doverlap(min1[2], max1[2], min2[2], max2[2]) : return True
-    eles: return False
+    if is1DOverlap(min1[0], max1[0], min2[0], max2[0]) and \
+       is1DOverlap(min1[1], max1[1], min2[1], max2[1]) and \
+       is1DOverlap(min1[2], max1[2], min2[2], max2[2]) : return True
+    else: return False
 
 def euler_distance_square(P1, P2):
     return (P1[0]-P2[0])**2 + (P1[1]-P2[1])**2 + (P1[2]-P2[2])**2
@@ -305,7 +305,7 @@ class BlenderObject(object):
         elif self.filepath[-4:] == '.obj':
             bpy.ops.import_scene.obj(filepath=self.filepath)
 
-    def is_intersecting(self, type='BOUNDING_BOX', ALLIGNED=True):
+    def is_intersecting(self,  ALLIGNED=True):
         ''' Check whether the object is intersecting to any other object in the scene or not
             return: bool
                True : if object is intersecting/overlapping with other object of type 'MESH' in the scene
@@ -319,9 +319,7 @@ class BlenderObject(object):
 
         start = time()
 
-        if type == 'BOUNDING_BOX' and not ALLIGNED:
-            self_bound = self.reference.bound_box
-
+        if not ALLIGNED:
             # positive_negative : example x_yz : x is positive and y,z are negative
             # _xyz = (self_bound[0][0], self_bound[0][1], self_bound[0][2])
             # z_xy = (self_bound[1][0], self_bound[1][1], self_bound[1][2])
@@ -331,7 +329,7 @@ class BlenderObject(object):
             # xz_y = (self_bound[5][0], self_bound[5][1], self_bound[5][2])
             # xyz_ = (self_bound[6][0], self_bound[6][1], self_bound[6][2])
             # xy_z = (self_bound[7][0], self_bound[7][1], self_bound[6][2])
-
+            self_bound = self.reference.bound_box
             self_min_xyz = (self_bound[0][0], self_bound[0][1], self_bound[0][2])
             self_max_xyz = (self_bound[6][0], self_bound[6][1], self_bound[6][2])
             self_centroid = ((self_min_xyz[0] + self_max_xyz[0])/2 + (self_min_xyz[1] + self_max_xyz[1])/2 + (self_min_xyz[2] + self_max_xyz[2])/2)
@@ -345,50 +343,26 @@ class BlenderObject(object):
                     return False
                 else:
                     raise Exception('Not yet implemented')
-        elif type == 'BOUNDING_BOX' and ALLIGNED:
+        else:
             ''' Creating box parallel to axes, with the the geometrical centre of object and it's dimensions '''
             self_dim_x = self.reference.dimensions.x
             self_dim_y = self.reference.dimensions.y
             self_dim_z = self.reference.dimensions.z
             self_x, self_y, self_z = self.get_location()
             self_min_xyz = [self_x-self_dim_x/2, self_y-self_dim_y/2, self_z-self_dim_z/2]
-            self_min_xyz = [self_x+self_dim_x/2, self_y+self_dim_y/2, self_z+self_dim_z/2]
+            self_max_xyz = [self_x+self_dim_x/2, self_y+self_dim_y/2, self_z+self_dim_z/2]
 
             for obj in bpy.context.scene.objects:
                 if obj.type != 'MESH' or obj.name == self.name or 'refrigerator' in obj.name: continue
-                obj_dim_x = obj.refernece.dimensions.x
-                obj_dim_y = obj.refernece.dimensions.y
-                obj_dim_z = obj.refernece.dimensions.z
-                obj_x, obj_y, obj_z = obj.get_location()
+                obj_dim_x = obj.dimensions.x
+                obj_dim_y = obj.dimensions.y
+                obj_dim_z = obj.dimensions.z
+                obj_x, obj_y, obj_z = obj.location
                 obj_min_xyz = [obj_x-obj_dim_x/2, obj_y-obj_dim_y/2, obj_z-obj_dim_z/2]
-                obj_min_xyz = [obj_x+obj_dim_x/2, obj_y+obj_dim_y/2, obj_z+obj_dim_z/2]
+                obj_max_xyz = [obj_x+obj_dim_x/2, obj_y+obj_dim_y/2, obj_z+obj_dim_z/2]
 
                 if is3DOverlap(self_min_xyz, self_max_xyz, obj_min_xyz, obj_max_xyz):
                     end = time()
-                    print(f'[{self.name}] Intersection Found with {obj.name}  Time Elapsed: {(end-start)} seconds')
-                    return True
-        else :
-            #object calcs moved outside loop where possible
-            bm1 = bmesh.new()
-            bm1.from_mesh(self.reference.data)
-            bm1.transform(self.reference.matrix_world)
-            self_BVHtree = BVHTree.FromBMesh(bm1)
-            for obj in bpy.context.scene.objects:
-                if obj.name == self.name or not obj.type == 'MESH' or 'refrigerator' in  obj.name:
-                    continue
-                # initialize bmesh objects
-                bm2 = bmesh.new()
-                # fill bmesh data from objects
-                bm2.from_mesh(obj.data)
-                # transform needed to check intersection
-                bm2.transform(obj.matrix_world)
-                # make BVH tree from BMesh of objects
-                obj_BVHtree = BVHTree.FromBMesh(bm2)
-                # get intersection
-                intersection = self_BVHtree.overlap(obj_BVHtree)
-                if intersection != []:
-                    end = time()
-                    print(f'[{self.name}] Intersection Found with {obj.name}  Time Elapsed: {(end-start)} seconds')
                     return True
         end = time()
         print(f'[{self.name}] No Intersection Found  Time Elapsed: {(end-start)} seconds')
@@ -420,8 +394,7 @@ class BlenderObject(object):
         y_lims = [-0.4206 + dim_y/2, 0.025957 - dim_y/2]
         retry_tracker = True
         attempts = 0
-        while retry_tracker == True and attempts < 9:
-            print(f'\n{self.name} Dimensions:\n{self.reference.dimensions}')
+        while retry_tracker == True and attempts < 20:
             #Generate random X,Y,Z coords
             x_temp = random.uniform(x_lims[0], x_lims[1])
             y_temp = random.uniform(y_lims[0], y_lims[1])
@@ -430,5 +403,6 @@ class BlenderObject(object):
             # calling a class method to check if the object is intersecting with others
             retry_tracker = self.is_intersecting()
             attempts +=1
-            if attempts == 9:#place at origin if too many tries, removes from render for this image. 
+            if attempts == 20:#place at origin if too many tries, removes from render for this image. 
                 self.set_location(0,0,0)
+                print(f'{self.name} could not be placed in 20 attemps. Object set at origin for this image.')
