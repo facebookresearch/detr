@@ -3,12 +3,13 @@ import bpy_extras
 
 # relative import from other classes
 from .BlenderObject import *
+from .BlenderCamera import *
 
 class BlenderScene(object):
     ''' BlenderScene object represents the Scene object of blender, encapsulates methods like spawning object, maintaing them in teh scene, along with the rendering parameters and finally rendering process
         Attributes:
-            lambs: list
-                list containing lambs in the scene
+            lamps: list
+                list containing lamps in the scene
             object_fixed: list
                 list containing the objects which are not intended to place randomly to create differnt scene
             object_unfixed: list
@@ -44,7 +45,7 @@ class BlenderScene(object):
             Parameters:
                 reference: bpy data reference / bpy.context.scene
         '''
-        self.lambs = []
+        self.lamps = []
         self.objects_fixed = [] 
         self.objects_unfixed = []
         self.camera = None
@@ -131,7 +132,7 @@ class BlenderScene(object):
             obj.delete()
         for obj in self.objects_unfixed:
             obj.delete()
-        self.remove_lambs
+        self.remove_lamps
         self.objects_fixed = []
         self.objects_unfixed = []
         # doing it all again... all the objects are deleted by their respective delete() call
@@ -145,15 +146,15 @@ class BlenderScene(object):
             else :
                 obj.select = False
         bpy.ops.object.delete()
-        for block in bpy.reference.materials:
+        for block in bpy.data.materials:
             if block.users == 0:
-                bpy.reference.meshes.remove(block)
-        for block in bpy.reference.textures:
+                bpy.data.materials.remove(block)
+        for block in bpy.data.textures:
             if block.users == 0:
-                bpy.reference.meshes.remove(block)
-        for block in bpy.reference.images:
+                bpy.data.textures.remove(block)
+        for block in bpy.data.images:
             if block.users == 0:
-                bpy.reference.meshes.remove(block)
+                bpy.data.images.remove(block)
 
     def remove_object(self, obj):
         ''' remove object from the scene and delete it's model data 
@@ -173,13 +174,15 @@ class BlenderScene(object):
         self.reference.render.filepath = file_path
         bpy.ops.render.render(write_still=True)
 
-    #TODO: Update
-    def add_camera(self, camera):
-        self.camera = camera
+    def add_camera(self, ):
+        bpy.ops.object.camera_add()
+        bpy.context.scene.camera = bpy.context.object
+        cam = BlenderCamera(bpy.data.objects['Camera'])
+        self.camera = cam
 
     #TODO update
-    def add_lambs(self, lamb):
-        self.lamb.append(lamb)
+    def add_lamps(self, lamp):
+        self.lamps.append(lamp)
 
     #TODO: might not need
     def remove_lamps(self, ):

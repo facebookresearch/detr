@@ -58,14 +58,15 @@ class RenderInterface(object):
             C.user_preferences.addons['cycles'].preferences.devices[0].use = True
         except:
             print("Warning: CUDA device not detected, using CPU instead!", file=sys.stderr)
+        
+        #Below loop used to set up scene for object reloading
+        for obj in bpy.data.objects:
+            if 'Cube' in obj.name:
+                cube = BlenderObject(name='Cube')
+                cube.delete()
         self.scene = BlenderScene(bpy.data.scenes[0])
-        ## directly giving in the reference of blender object
-        # cube = BlenderObject(reference = bpy.data.objects['Cube'])
-        # fetching the object in blender using the object name
-        cube = BlenderObject(name='Cube')
-        cube.delete()
-        cam = BlenderCamera(bpy.data.objects['Camera'])
-        self.scene.add_camera(cam)
+        self.scene.delete_all()
+        self.scene.add_camera()
         self.scene.set_render(resolution=resolution, samples=samples, set_high_quality=set_high_quality)
 
 

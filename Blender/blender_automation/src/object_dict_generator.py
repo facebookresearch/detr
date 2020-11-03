@@ -21,12 +21,14 @@ import os
 import json
 from math import pi
 
-os.chdir(r"C:\Users\nickh\Documents\GitHub\Fridge-Food-Type\Blender\blender_automation\src")
-base_path = "C:/Users/nickh/Documents/GitHub/Fridge-Food-Type/Blender/blender_automation/workspace/objects/"
+file_location = os.path.dirname(__file__)
+head, tail = os.path.split(file_location)
+base_path = os.path.join(head, 'workspace', 'objects')
+
 #Individual object parameters
 wine = {
     'shelves': [1],
-    'path': os.path.join(base_path, "750ML_Wine/750ML_Wine.obj"),
+    'path': os.path.join(base_path, '750ML_Wine', '750ML_Wine.obj'),
     'origin': 'CENTER',
     'scale_factor': 0.014387,
     'import_rotations': [0, 0, 0],
@@ -36,7 +38,7 @@ wine = {
 }
 apple = {
     'shelves': [1, 2, 3],
-    'path': os.path.join(base_path, "apple/manzana2.obj"),
+    'path': os.path.join(base_path, 'apple', 'manzana2.obj'),
     'origin': 'CENTER',
     'scale_factor': 0.0013,
     'import_rotations': [0, 0, 0],
@@ -46,7 +48,7 @@ apple = {
 }
 grapes = {
     'shelves': [1, 2, 3],
-    'path': os.path.join(base_path, "grapes_1/grapes_1.obj"),
+    'path': os.path.join(base_path, 'grapes_1', 'grapes_1.obj'),
     'origin': 'CENTER',
     'scale_factor': 0.0175,
     'import_rotations': [0, 0, 0],
@@ -56,7 +58,7 @@ grapes = {
 }
 lettuce = {
     'shelves': [1, 2, 3],
-    'path': os.path.join(base_path, "LettuceRomaine/LettuceRomaine.obj"),
+    'path': os.path.join(base_path, 'LettuceRomaine', 'LettuceRomaine.obj'),
     'origin': 'CENTER',
     'scale_factor': 0.0075,
     'import_rotations': [0, 0, 0],
@@ -66,9 +68,9 @@ lettuce = {
 }
 tomato = {
     'shelves': [1, 2, 3],
-    'path': os.path.join(base_path, "tomato/Tomato_v1.obj"),
+    'path': os.path.join(base_path, 'tomato', 'Tomato_v1.obj'),
     'origin': 'CENTER',
-    'scale_factor': 0.009365,
+    'scale_factor': 0.009,
     'import_rotations': [0, 0, 0],
     'unconstrained_axis': [0, 0, 1],
     'label_cat': 'n_tomato',
@@ -76,7 +78,7 @@ tomato = {
 }
 beer_gambrinus = {
     'shelves': [1],
-    'path': os.path.join(base_path, "beer_gambrinus/gambrinus.obj"),
+    'path': os.path.join(base_path, 'beer_gambrinus', 'gambrinus.obj'),
     'origin': 'CENTER',
     'scale_factor': 0.02233,
     'import_rotations': [pi/2, 0, 0],
@@ -95,5 +97,5 @@ dict_temp = {
     'gambrinus': beer_gambrinus
 }
 
-with open("object_dict.json","w") as f:
+with open('object_dict.json','w') as f:
     json.dump(dict_temp,f)

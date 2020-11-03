@@ -33,23 +33,28 @@ write_annotation = open('annotations.csv', 'w')
 # Creating a RenderInterface which would be doing all the importing and
 # placement of the objects, along with the scene/rendering setup
 RI = RenderInterface(resolution=(400,600), samples=128, set_high_quality=True)
-RI.place_all(repeat_objects=True)
 
-for i in range(500):
+
+for i in range(60):
+  RI.scene.delete_all()
+  RI.setup_blender(resolution=(400,600), samples=128, set_high_quality=True)
+  RI.place_all(repeat_objects=True)
+
+  imgs_per_shuffle = 10
+  for j in range(imgs_per_shuffle):
     single_img_time = time()
     RI.shuffle_objects()
-    shuffle_time = time()
 
+    index = j + imgs_per_shuffle*i
     # Render the scene to a file
-    print(f'Starting rendering on image {i}')
-    file_path = os.path.abspath(f'./workspace/outputs/image_{i}.jpg')
+    print(f'Starting rendering on image {index}')
+    file_path = os.path.abspath(f'./workspace/outputs/image_{index}.jpg')
     RI.render(file_path)
     single_img_time_end = time()
-    print(f'Image {i} completed in {single_img_time_end - single_img_time} s. Object shuffling took {shuffle_time - single_img_time} s.')
+    print(f'Image {index} completed in {single_img_time_end - single_img_time} s.')
 
     # Fetch annotation from rendered image
     annotation = RI.scene.get_annotation()
-    file_path = os.path.abspath('./workspace/outputs/')
     #TODO could be written directly in COCO format
     for ann in annotation:
     	left_top = annotation[ann]
