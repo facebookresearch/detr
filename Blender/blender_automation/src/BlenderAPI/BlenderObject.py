@@ -72,6 +72,9 @@ def is3DOverlap(min1, max1, min2, max2):
        is1Doverlap(min1[2], max1[2], min2[2], max2[2]) : return True
     eles: return False
 
+def euler_distance_square(P1, P2):
+    return (P1[0]-P2[0])**2 + (P1[1]-P2[1])**2 + (P1[2]-P2[2])**2
+
 # Default shelf heights match only current fridge item. 
 def find_z_coord(item_name, origin_center=True, shelf_num=1, shelf_heights=[1.2246, 1.5581, 1.7443]):
     """
@@ -302,7 +305,7 @@ class BlenderObject(object):
         elif self.filepath[-4:] == '.obj':
             bpy.ops.import_scene.obj(filepath=self.filepath)
 
-    def is_intersecting(self, type='BOUNDING_BOX'):
+    def is_intersecting(self, type='BOUNDING_BOX', ALLIGNED=True):
         ''' Check whether the object is intersecting to any other object in the scene or not
             return: bool
                True : if object is intersecting/overlapping with other object of type 'MESH' in the scene
@@ -316,9 +319,9 @@ class BlenderObject(object):
 
         start = time()
 
-        if type == 'BOUNDING_BOX':
+        if type == 'BOUNDING_BOX' and not ALLIGNED:
             self_bound = self.reference.bound_box
- 
+
             # positive_negative : example x_yz : x is positive and y,z are negative
             # _xyz = (self_bound[0][0], self_bound[0][1], self_bound[0][2])
             # z_xy = (self_bound[1][0], self_bound[1][1], self_bound[1][2])
@@ -329,9 +332,20 @@ class BlenderObject(object):
             # xyz_ = (self_bound[6][0], self_bound[6][1], self_bound[6][2])
             # xy_z = (self_bound[7][0], self_bound[7][1], self_bound[6][2])
 
-            # self_min_xyz = (self_bound[0][0], self_bound[0][1], self_bound[0][2])
-            # self_max_xyz = (self_bound[6][0], self_bound[6][1], self_bound[6][2])
-
+            self_min_xyz = (self_bound[0][0], self_bound[0][1], self_bound[0][2])
+            self_max_xyz = (self_bound[6][0], self_bound[6][1], self_bound[6][2])
+            self_centroid = ((self_min_xyz[0] + self_max_xyz[0])/2 + (self_min_xyz[1] + self_max_xyz[1])/2 + (self_min_xyz[2] + self_max_xyz[2])/2)
+            for obj in bpy.context.scene.objects:
+                if obj.type != 'MESH' or obj.name == self.name or 'refrigerator' in obj.name: continue
+                obj_bound = obj.reference.bound_box
+                obj_min_xyz = (obj_bound[0][0], obj_bound[0][1], obj_bound[0][2])
+                obj_max_xyz = (obj_bound[6][0], obj_bound[6][1], obj_bound[6][2])
+                obj_centroid = ((obj_min_xyz[0] + obj_max_xyz[0])/2 + (obj_min_xyz[1] + obj_max_xyz[1])/2 + (obj_min_xyz[2] + obj_max_xyz[2])/2)
+                if euler_distance_square(self_centroid, obj_centroid) >= (euler_distance_square(self_min_xyz, self_centroid)**(0.5) + euler_distance_square(obj_min_xyz, obj_centroid)**(0.5))**2:
+                    return False
+                else:
+                    raise Exception('Not yet implemented')
+        elif type == 'BOUNDING_BOX' and ALLIGNED:
             ''' Creating box parallel to axes, with the the geometrical centre of object and it's dimensions '''
             self_dim_x = self.reference.dimensions.x
             self_dim_y = self.reference.dimensions.y
@@ -342,10 +356,6 @@ class BlenderObject(object):
 
             for obj in bpy.context.scene.objects:
                 if obj.type != 'MESH' or obj.name == self.name or 'refrigerator' in obj.name: continue
-                # obj_bound = obj.reference.bound_box
-                # obj_min_xyz = (obj_bound[0][0], obj_bound[0][1], obj_bound[0][2])
-                # obj_max_xyz = (obj_bound[6][0], obj_bound[6][1], obj_bound[6][2])
-
                 obj_dim_x = obj.refernece.dimensions.x
                 obj_dim_y = obj.refernece.dimensions.y
                 obj_dim_z = obj.refernece.dimensions.z
