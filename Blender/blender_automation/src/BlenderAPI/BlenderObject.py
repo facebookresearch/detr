@@ -318,8 +318,9 @@ class BlenderObject(object):
 
         if type == 'BOUNDING_BOX':
             self_bound = self.reference.bound_box
-            _xyz = (self_bound[0][0], self_bound[0][1], self_bound[0][2])
+ 
             # positive_negative : example x_yz : x is positive and y,z are negative
+            # _xyz = (self_bound[0][0], self_bound[0][1], self_bound[0][2])
             # z_xy = (self_bound[1][0], self_bound[1][1], self_bound[1][2])
             # yz_x = (self_bound[2][0], self_bound[2][1], self_bound[2][2])
             # y_xz = (self_bound[3][0], self_bound[3][1], self_bound[3][2])
@@ -327,13 +328,31 @@ class BlenderObject(object):
             # xz_y = (self_bound[5][0], self_bound[5][1], self_bound[5][2])
             # xyz_ = (self_bound[6][0], self_bound[6][1], self_bound[6][2])
             # xy_z = (self_bound[7][0], self_bound[7][1], self_bound[6][2])
-            self_min_xyz = (self_bound[0][0], self_bound[0][1], self_bound[0][2])
-            self_max_xyz = (self_bound[6][0], self_bound[6][1], self_bound[6][2])
+
+            # self_min_xyz = (self_bound[0][0], self_bound[0][1], self_bound[0][2])
+            # self_max_xyz = (self_bound[6][0], self_bound[6][1], self_bound[6][2])
+
+            ''' Creating box parallel to axes, with the the geometrical centre of object and it's dimensions '''
+            self_dim_x = self.reference.dimensions.x
+            self_dim_y = self.reference.dimensions.y
+            self_dim_z = self.reference.dimensions.z
+            self_x, self_y, self_z = self.get_location()
+            self_min_xyz = [self_x-self_dim_x/2, self_y-self_dim_y/2, self_z-self_dim_z/2]
+            self_min_xyz = [self_x+self_dim_x/2, self_y+self_dim_y/2, self_z+self_dim_z/2]
+
             for obj in bpy.context.scene.objects:
                 if obj.type != 'MESH' or obj.name == self.name or 'refrigerator' in obj.name: continue
-                obj_bound = obj.reference.bound_box
-                obj_min_xyz = (obj_bound[0][0], obj_bound[0][1], obj_bound[0][2])
-                obj_max_xyz = (obj_bound[6][0], obj_bound[6][1], obj_bound[6][2])
+                # obj_bound = obj.reference.bound_box
+                # obj_min_xyz = (obj_bound[0][0], obj_bound[0][1], obj_bound[0][2])
+                # obj_max_xyz = (obj_bound[6][0], obj_bound[6][1], obj_bound[6][2])
+
+                obj_dim_x = obj.refernece.dimensions.x
+                obj_dim_y = obj.refernece.dimensions.y
+                obj_dim_z = obj.refernece.dimensions.z
+                obj_x, obj_y, obj_z = obj.get_location()
+                obj_min_xyz = [obj_x-obj_dim_x/2, obj_y-obj_dim_y/2, obj_z-obj_dim_z/2]
+                obj_min_xyz = [obj_x+obj_dim_x/2, obj_y+obj_dim_y/2, obj_z+obj_dim_z/2]
+
                 if is3DOverlap(self_min_xyz, self_max_xyz, obj_min_xyz, obj_max_xyz):
                     end = time()
                     print(f'[{self.name}] Intersection Found with {obj.name}  Time Elapsed: {(end-start)} seconds')
