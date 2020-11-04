@@ -17,10 +17,16 @@ sys.path.append(os.path.dirname(MODULE_DIRECTORY))
 
 # To import python packages like pandas
 #TODO generalize this path
-#sys.path.append('/home/solus/anaconda3/lib/python3.8/site-packages')
-sys.path.append(r"C:\Users\nickh\anaconda3\Lib\site-packages")
-sys.path.append(os.getcwd())
-##TODO : [utils.delete_all] not being used, anyway it's written in BlenderScene Class as Class Method
+try: # bad hack just for the time being so that 
+    we don't have to change it everytime we ran on each of our system
+    sys.path.append('/home/solus/anaconda3/lib/python3.8/site-packages')
+except:
+    sys.path.append(r"C:\Users\nickh\anaconda3\Lib\site-packages")
+
+## TODO: Don't need anymore, intended for the import of utils.py which we aren't using anymore
+# sys.path.append(os.getcwd())
+
+#TODO : [utils.delete_all] not being used, anyway it's written in BlenderScene Class as Class Method
 #from utils import delete_all
 
 from RenderInterface import RenderInterface

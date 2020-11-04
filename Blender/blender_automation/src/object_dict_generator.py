@@ -22,8 +22,8 @@ import json
 from math import pi
 
 file_location = os.path.dirname(__file__)
-head, tail = os.path.split(file_location)
-base_path = os.path.join(head, 'workspace', 'objects')
+abs_path = os.path.abspath(file_location)
+base_path = os.path.abspath(os.path.join(abs_path, os.pardir, 'workspace', 'objects'))
 
 #Individual object parameters
 wine = {
