@@ -55,7 +55,7 @@ for i in range(1):
     index = j + imgs_per_shuffle*i
     # Render the scene to a file
     print(f'Starting rendering on image {index}')
-    file_path = os.path.abspath(f'./workspace/outputs/image_{index}.jpg')
+    file_path = os.path.abspath(f'./workspace/outputs/image_{index}.png')
     RI.render(file_path)
     single_img_time_end = time()
     print(f'Image {index} completed in {single_img_time_end - single_img_time} s.')
