@@ -34,7 +34,7 @@ from RenderInterface import RenderInterface
 start = time()
 
 # Open a file for writing object annotations
-write_annotation = open('annotations.csv', 'w')
+write_annotation = open('annotations.tsv', 'w')
 write_annotation.write('file_path\tobject_name\ttop_left_xy\tright_bottom_xy\n')
 
 # Creating a RenderInterface which would be doing all the importing and
