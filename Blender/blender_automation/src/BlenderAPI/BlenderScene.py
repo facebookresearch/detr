@@ -258,5 +258,5 @@ class BlenderScene(object):
                         if _x < min_x: min_x = _x
                         if _y > max_y: max_y = _y
                         if _y < min_y: min_y = _y
-            annotation[obj.name] = [(round(min_x), round(max_y)), (round(max_x),round(min_y))]
+            annotation[obj.name] = [obj.parent, (round(min_x), round(max_y)), (round(max_x),round(min_y))]
         return annotation
