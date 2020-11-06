@@ -42,12 +42,12 @@ write_annotation.write('file_path\tobject_name\ttop_left_xy\tright_bottom_xy\n')
 RI = RenderInterface(resolution=(400,600), samples=128, set_high_quality=True)
 
 
-for i in range(1):
+for i in range(5):
   RI.scene.delete_all()
   RI.setup_blender(resolution=(400,600), samples=128, set_high_quality=True)
   RI.place_all(repeat_objects=True)
 
-  imgs_per_shuffle = 1
+  imgs_per_shuffle = 2
   for j in range(imgs_per_shuffle):
     single_img_time = time()
     RI.shuffle_objects()
@@ -55,19 +55,17 @@ for i in range(1):
     index = j + imgs_per_shuffle*i
     # Render the scene to a file
     print(f'Starting rendering on image {index}')
-    file_path = os.path.abspath(f'./workspace/outputs/image_{index}.png')
+    file_path = os.path.abspath(f'./workspace/outputs/blender_image_{index}.png')
     RI.render(file_path)
     single_img_time_end = time()
     print(f'Image {index} completed in {single_img_time_end - single_img_time} s.')
 
     # Fetch annotation from rendered image
     annotation = RI.scene.get_annotation()
-    #TODO could be written directly in COCO format
     for ann in annotation:
         object_name = annotation[ann][0]
         left_top = annotation[ann][1]
         right_bottom = annotation[ann][2]
-      #TODO import params JSON file and convert 3d model object name to the actual label, Could be part of post annotation processing seperately
         write_annotation.write(f'{file_path}\t{object_name}\t({left_top[0]},{left_top[1]})\t({right_bottom[0]},{right_bottom[1]})\n')
 
 end = time()

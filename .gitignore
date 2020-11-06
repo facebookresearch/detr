@@ -150,3 +150,5 @@ dmypy.json
 Blender/blender_automation/workspace/objects
 Blender/blender_automation/workspace/outputs
 Blender/blender_automation/annotations.csv
+Blender/blender_automation/annotations.tsv
+Blender/blender_automation/synthetic_annotations_coco.json
