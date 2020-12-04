@@ -112,101 +112,6 @@ def get_args_parser():
     return parser
 
 
-@torch.no_grad()
-def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, output_dir):
-    model.eval()
-    # criterion.eval()
-
-    # metric_logger = utils.MetricLogger(delimiter="  ")
-    # metric_logger.add_meter('class_error', utils.SmoothedValue(window_size=1, fmt='{value:.2f}'))
-    # header = 'Test:'
-
-    # iou_types = tuple(k for k in ('segm', 'bbox') if k in postprocessors.keys())
-    # coco_evaluator = CocoEvaluator(base_ds, iou_types)
-    # coco_evaluator.coco_eval[iou_types[0]].params.iouThrs = [0, 0.1, 0.5, 0.75]
-
-    # panoptic_evaluator = None
-    # if 'panoptic' in postprocessors.keys():
-    #     panoptic_evaluator = PanopticEvaluator(
-    #         data_loader.dataset.ann_file,
-    #         data_loader.dataset.ann_folder,
-    #         output_dir=os.path.join(output_dir, "panoptic_eval"),
-    #     )
-    orig_target_sizes = torch.Tensor([[1280, 720]])
-    orig_target_sizes.to(device)
-    for samples in data_loader:
-        # print(type(samples))
-        samples = samples.to(device)
-        # print(type(samples))
-        # targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-
-        outputs = model(samples)
-        # print(outputs)
-        # print('``````````````````````````````')
-        # print(targets)
-        # break
-        # loss_dict = criterion(outputs, targets)
-        # weight_dict = criterion.weight_dict
-
-        # reduce losses over all GPUs for logging purposes
-        # loss_dict_reduced = utils.reduce_dict(loss_dict)
-        # loss_dict_reduced_scaled = {k: v * weight_dict[k]
-        #                             for k, v in loss_dict_reduced.items() if k in weight_dict}
-        # loss_dict_reduced_unscaled = {f'{k}_unscaled': v
-        #                               for k, v in loss_dict_reduced.items()}
-        # metric_logger.update(loss=sum(loss_dict_reduced_scaled.values()),
-        #                      **loss_dict_reduced_scaled,
-        #                      **loss_dict_reduced_unscaled)
-        # metric_logger.update(class_error=loss_dict_reduced['class_error'])
-
-        # orig_target_sizes = torch.stack([t["orig_size"] for t in targets], dim=0)
-        results = postprocessors['bbox'](outputs, orig_target_sizes)
-        # print(results)
-        # print(results)
-        # # break
-        # if 'segm' in postprocessors.keys():
-        #     target_sizes = torch.stack([t["size"] for t in targets], dim=0)
-        #     results = postprocessors['segm'](results, outputs, orig_target_sizes, target_sizes)
-        # res = {target['image_id'].item(): output for target, output in zip(targets, results)}
-        # if coco_evaluator is not None:
-        #     coco_evaluator.update(res)
-        #
-        # if panoptic_evaluator is not None:
-        #     res_pano = postprocessors["panoptic"](outputs, target_sizes, orig_target_sizes)
-        #     for i, target in enumerate(targets):
-        #         image_id = target["image_id"].item()
-        #         file_name = f"{image_id:012d}.png"
-        #         res_pano[i]["image_id"] = image_id
-        #         res_pano[i]["file_name"] = file_name
-        #
-        #     panoptic_evaluator.update(res_pano)
-
-    # # gather the stats from all processes
-    # metric_logger.synchronize_between_processes()
-    # print("Averaged stats:", metric_logger)
-    # if coco_evaluator is not None:
-    #     coco_evaluator.synchronize_between_processes()
-    # if panoptic_evaluator is not None:
-    #     panoptic_evaluator.synchronize_between_processes()
-    #
-    # # accumulate predictions from all images
-    # if coco_evaluator is not None:
-    #     coco_evaluator.accumulate()
-    #     coco_evaluator.summarize()
-    # panoptic_res = None
-    # if panoptic_evaluator is not None:
-    #     panoptic_res = panoptic_evaluator.summarize()
-    # stats = {k: meter.global_avg for k, meter in metric_logger.meters.items()}
-    # if coco_evaluator is not None:
-    #     if 'bbox' in postprocessors.keys():
-    #         stats['coco_eval_bbox'] = coco_evaluator.coco_eval['bbox'].stats.tolist()
-    #     if 'segm' in postprocessors.keys():
-    #         stats['coco_eval_masks'] = coco_evaluator.coco_eval['segm'].stats.tolist()
-    # if panoptic_res is not None:
-    #     stats['PQ_all'] = panoptic_res["All"]
-    #     stats['PQ_th'] = panoptic_res["Things"]
-    #     stats['PQ_st'] = panoptic_res["Stuff"]
-    # return stats, coco_evaluator
 
 category_filter = [
 'person',
@@ -398,6 +303,7 @@ def draw_bbox(imgcv, result, conf_thresh=0.6):
         if result['labels'][idx] > len(categories):
             continue
         label = categories[result['labels'][idx]]
+        # print(label)
         if label not in category_filter:
             continue
         if conf < conf_thresh:
@@ -406,10 +312,10 @@ def draw_bbox(imgcv, result, conf_thresh=0.6):
         cv2.rectangle(imgcv, (x1, y1), (x2, y2), cate_to_colors[label], 2)
         labelSize = cv2.getTextSize(label, cv2.FONT_HERSHEY_COMPLEX, 0.5, 2)
 
-        if label not in ['person', 'car']:
+        if label not in ['person']:
             _x1 = x1
             _y1 = y1  # + int(labelSize[0][1]/2)
-            _x2 = _x1 + labelSize[0][0]
+            _x2 = _x1 + labelSize[0][0] + 20
             _y2 = y1 - int(labelSize[0][1])
             cv2.rectangle(imgcv, (_x1, _y1), (_x2, _y2), cate_to_colors[label], cv2.FILLED)
             cv2.putText(imgcv, label+str(round(conf.data.tolist(), 2)), (x1, y1), cv2.FONT_HERSHEY_COMPLEX, 0.4, (0, 0, 0), 1)
@@ -427,10 +333,9 @@ def main(args):
     random.seed(seed)
 
     model, criterion, postprocessors = build_model(args)
-    # print(model)
+
     model.to(device)
-    # print(next(model.parameters()).device)
-    # print(model)
+
     postprocessors['bbox'] = postprocessors['bbox'].to(device)
 
     if args.resume:
@@ -449,48 +354,35 @@ def main(args):
     ])
 
     cap = cv2.VideoCapture('/home/lei/Downloads/la_drive.mp4')
-    counter = 30000
+    counter = 20000
     cap.set(cv2.CAP_PROP_POS_FRAMES, counter)
-    # img = Image.open("/home/lei/data/la4k_video_to_imgs/val2017/la4k00005610.jpg")
-    # img = cv2.imread("/home/lei/data/la4k_video_to_imgs/val2017/la4k00005610.jpg")
-    prefix = "/home/lei/data/la_drive_dets/la_drive_"
-    cv2.namedWindow("test", cv2.WINDOW_NORMAL)
-
+    # cv2.namedWindow("test", cv2.WINDOW_NORMAL)
+    cv2.namedWindow("test", 2)          
+    cv2.setWindowProperty('frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
     ret = True
     while ret:
         # if counter > 6000:
         #     break
         ret, img = cap.read()
-        t = time.time()
+
         img_canvas = img.copy()
         img = Image.fromarray(img)
-        # print(type(img))
+
         input = transform(img)
         input = input[np.newaxis, ...]
         input = input.to(device, dtype=torch.float32)
-
+        t = time.time()
         output = model(input)
-
+        print((time.time() - t) * 1000, 'ms')
         orig_target_sizes = torch.Tensor([[720, 1280]])
         orig_target_sizes = orig_target_sizes.to(device)
-        # print(output)
-        # print(postprocessors['bbox'])
-        # print(orig_target_sizes)
+
         results = postprocessors['bbox'](output, orig_target_sizes)
-        print((time.time() - t) * 1000, 'ms')
-        # print(results)
-        # print(results[0]['boxes'])
-        # img = cv2.imread("/home/lei/data/la4k_video_to_imgs/val2017/la4k00005610.jpg")
-        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         img_canvas = draw_bbox(img_canvas, results, conf_thresh=0.85)
-        # cv2.imwrite(prefix + str(counter).zfill(8) + ".jpg", img_canvas)
+
         counter += 1
-        # Image.fromarray(img).
-        # img.show()
-        # plt.imshow(img)
-        # plt.show()
-        # print(img.shape)
+
 
         cv2.imshow("test", img_canvas)
         key = cv2.waitKey(1)
