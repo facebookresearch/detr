@@ -1,3 +1,6 @@
+**Lei's comment**
+python3 predictor.py
+
 **DE⫶TR**: End-to-End Object Detection with Transformers
 ========
 PyTorch training code and pretrained models for **DETR** (**DE**tection **TR**ansformer).

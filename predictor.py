@@ -398,3 +398,9 @@ if __name__ == '__main__':
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
     main(args)
+    """
+    How to run:
+    1. change video path in main()
+    2. run:
+        python3 predictor.py
+    """
