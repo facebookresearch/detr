@@ -9,3 +9,4 @@ onnx
 onnxruntime
 Pillow
 matplotlib
+gradio
