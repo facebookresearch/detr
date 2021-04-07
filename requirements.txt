@@ -7,3 +7,5 @@ git+https://github.com/cocodataset/panopticapi.git#egg=panopticapi
 scipy
 onnx
 onnxruntime
+Pillow
+matplotlib
