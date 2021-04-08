@@ -99,8 +99,13 @@ def detr(im):
 inputs = gr.inputs.Image(type='pil', label="Original Image")
 outputs = gr.outputs.Image(type="pil",label="Output Image")
 
+examples = [
+    ['horses.jpg'],
+    ['pandas']
+]
+
 title = "DETR"
 description = "demo for Facebook DETR. To use it, simply upload your image, or click one of the examples to load them. Read more at the links below."
 article = "<p style='text-align: center'><a href='https://arxiv.org/abs/2005.12872'>End-to-End Object Detection with Transformers</a> | <a href='https://github.com/facebookresearch/detr'>Github Repo</a></p>"
 
-gr.Interface(detr, inputs, outputs, title=title, description=description, article=article).launch()
+gr.Interface(detr, inputs, outputs, title=title, description=description, article=article, examples=examples).launch()
