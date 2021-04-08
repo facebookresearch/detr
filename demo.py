@@ -101,7 +101,7 @@ outputs = gr.outputs.Image(type="pil",label="Output Image")
 
 examples = [
     ['horses.jpg'],
-    ['pandas']
+    ['pandas.jpg']
 ]
 
 title = "DETR"
