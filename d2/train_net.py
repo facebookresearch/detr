@@ -4,11 +4,14 @@ DETR Training Script.
 
 This script is a simplified version of the training script in detectron2/tools.
 """
+import json
 import os
 import sys
 import itertools
-
+import torch
 # fmt: off
+from detectron2.structures import BoxMode
+
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 # fmt: on
 
@@ -21,7 +24,7 @@ import detectron2.utils.comm as comm
 from d2.detr import DetrDatasetMapper, add_detr_config
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import get_cfg
-from detectron2.data import MetadataCatalog, build_detection_train_loader
+from detectron2.data import MetadataCatalog, build_detection_train_loader, DatasetCatalog
 from detectron2.engine import DefaultTrainer, default_argument_parser, default_setup, launch
 from detectron2.evaluation import COCOEvaluator, verify_results
 
@@ -131,10 +134,55 @@ def main(args):
     trainer.resume_or_load(resume=args.resume)
     return trainer.train()
 
+label_to_img = lambda name: name.replace("gtBboxCityPersons.json", "leftImg8bit.png")
+
+
+def city_persons(trainval):
+    ROOT = "/home/bfranke/pytorch-deeplab-xception/data/cityscapes"
+    GT = os.path.join(ROOT, "gtBboxCityPersons", trainval)
+    DATA = os.path.join(ROOT, "leftImg8bit", trainval)
+    res = []
+    for city in os.listdir(GT):
+        assert city in os.listdir(DATA)
+        cfold = os.path.join(GT, city)
+        for fname in os.listdir(cfold):
+            file = os.path.join(cfold, fname)
+            img = os.path.join(DATA, city, label_to_img(fname))
+            with open(file) as fp:
+                jfile = json.load(fp)
+            d = {
+                "file_name": img,
+                "height": jfile["imgHeight"],
+                "width": jfile["imgWidth"],
+                "image_id": fname.split(".")[0],
+            }
+            annotations = []
+            for obj in jfile["objects"]:
+                if obj["label"] != "ignore":
+                    annotations.append(
+                        {
+                            "bbox": obj['bbox'],
+                            "bbox_mode": BoxMode.XYWH_ABS,
+                            "category_id": 1
+                        }
+                    )
+            d['annotations'] = annotations
+            res.append(d)
+
+    return res
+
+city_persons_train = lambda: city_persons("train")
+city_persons_test = lambda : city_persons("val")
 
 if __name__ == "__main__":
     args = default_argument_parser().parse_args()
     print("Command Line Args:", args)
+    DatasetCatalog.register("city_persons_train", city_persons_train)
+    DatasetCatalog.register("city_persons_test", city_persons_test)
+    thing_classes = ["n/a", "pedestrian"]
+    MetadataCatalog.get("city_persons_train").thing_classes = thing_classes
+    MetadataCatalog.get("city_persons_test").thing_classes = thing_classes
+    print("Registered!")
     launch(
         main,
         args.num_gpus,
