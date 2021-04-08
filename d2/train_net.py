@@ -136,6 +136,22 @@ def main(args):
 
 label_to_img = lambda name: name.replace("gtBboxCityPersons.json", "leftImg8bit.png")
 
+CLASSES = [
+    'N/A', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
+    'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'N/A',
+    'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse',
+    'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'N/A', 'backpack',
+    'umbrella', 'N/A', 'N/A', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis',
+    'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove',
+    'skateboard', 'surfboard', 'tennis racket', 'bottle', 'N/A', 'wine glass',
+    'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich',
+    'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake',
+    'chair', 'couch', 'potted plant', 'bed', 'N/A', 'dining table', 'N/A',
+    'N/A', 'toilet', 'N/A', 'tv', 'laptop', 'mouse', 'remote', 'keyboard',
+    'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'N/A',
+    'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier',
+    'toothbrush'
+]
 
 def city_persons(trainval):
     ROOT = "/home/bfranke/pytorch-deeplab-xception/data/cityscapes"
@@ -179,9 +195,8 @@ if __name__ == "__main__":
     print("Command Line Args:", args)
     DatasetCatalog.register("city_persons_train", city_persons_train)
     DatasetCatalog.register("city_persons_test", city_persons_test)
-    thing_classes = ["n/a", "pedestrian"]
-    MetadataCatalog.get("city_persons_train").thing_classes = thing_classes
-    MetadataCatalog.get("city_persons_test").thing_classes = thing_classes
+    MetadataCatalog.get("city_persons_train").thing_classes = CLASSES
+    MetadataCatalog.get("city_persons_test").thing_classes = CLASSES
     print("Registered!")
     launch(
         main,
