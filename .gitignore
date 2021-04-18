@@ -16,3 +16,4 @@ experiment-*
 not_tracked_dir/
 .vscode
 *.pt
+checkpoint/log.txt
