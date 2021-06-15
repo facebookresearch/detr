@@ -12,7 +12,8 @@ from torch.utils.data import DataLoader, DistributedSampler
 
 import datasets
 import util.misc as utils
-from datasets import build_dataset, get_coco_api_from_dataset
+from datasets import get_coco_api_from_dataset
+from datasets.ucsd import build as build_dataset
 from engine import evaluate, train_one_epoch
 from models import build_model
 
@@ -22,7 +23,7 @@ def get_args_parser():
     # added for UCSD
     parser.add_argument('--num_classes', default=None, type=int,
                         help='num of classes in your dataset, which can override the value hard-coded in file models/detr.py')
-    parser.add_argument('--annotation_name', default=None, type=str,
+    parser.add_argument('--annotation_name', default=None, type=str, action='store_true',
                         help='all / tfsg / veh / tflt')
     parser.add_argument('--gpu_id', default=None, type=int,
                         help="specify GPU ID")
