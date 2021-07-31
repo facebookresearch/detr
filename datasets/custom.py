@@ -13,8 +13,8 @@ def build(image_set, args):
     training_json_file = 'custom_train.json'
     validation_json_file = 'custom_val.json'
     PATHS = {
-        "train": (root / "train2017", root / "annotations" / training_json_file),
-        "val": (root / "val2017", root / "annotations" / validation_json_file),
+        "train": (root / "train2021", root / "annotations" / training_json_file),
+        "val": (root / "val2021", root / "annotations" / validation_json_file),
     }
 
     img_folder, ann_file = PATHS[image_set]
