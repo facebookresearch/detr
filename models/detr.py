@@ -123,7 +123,7 @@ class SetCriterion(nn.Module):
 
         if log:
             # TODO this should probably be a separate loss, not hacked in this one here
-            losses['class_error'] = 100 - accuracy(src_logits[idx], target_classes_o)[0]
+            losses['class_error'] = 100 - accuracy(src_logits[idx][..., :-1], target_classes_o)[0]
         return losses
 
     @torch.no_grad()
