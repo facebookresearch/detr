@@ -88,7 +88,7 @@ COCO val5k evaluation results can be found in this [gist](https://gist.github.co
 The models are also available via torch hub,
 to load DETR R50 with pretrained weights simply do:
 ```python
-model = torch.hub.load('facebookresearch/detr', 'detr_resnet50', pretrained=True)
+model = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50', pretrained=True)
 ```
 
 
