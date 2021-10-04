@@ -19,7 +19,7 @@ definitions with standard training loops.
 
 Additionnally, we provide a Detectron2 wrapper in the d2/ folder. See the readme there for more information.
 
-For details see [End-to-End Object Detection with Transformers](https://ai.facebook.com/research/publications/end-to-end-object-detection-with-transformers) by Nicolas Carion, Francisco Massa, Gabriel Synnaeve, Nicolas Usunier, Alexander Kirillov, and Sergey Zagoruyko.
+For details see [End-to-End Object Detection with Transformers](https://research.fb.com/publications/end-to-end-object-detection-with-transformers/) by Nicolas Carion, Francisco Massa, Gabriel Synnaeve, Nicolas Usunier, Alexander Kirillov, and Sergey Zagoruyko.
 
 # Model Zoo
 We provide baseline DETR and DETR-DC5 models, and plan to include more in future.
