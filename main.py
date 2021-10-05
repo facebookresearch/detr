@@ -18,6 +18,7 @@ from models import build_model
 
 
 def get_args_parser():
+    # i test my git knowledge by inserting few changes #
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
     parser.add_argument('--lr', default=1e-4, type=float)
     parser.add_argument('--lr_backbone', default=1e-5, type=float)
