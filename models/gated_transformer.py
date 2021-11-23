@@ -13,10 +13,9 @@ from typing import Optional, List
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
-from models.gated_axial_attention import AxialBlock_dynamic
 
 
-class Transformer(nn.Module):
+class GatedTransformer(nn.Module):
 
     def __init__(self, d_model=512, nhead=8, num_encoder_layers=6,
                  num_decoder_layers=6, dim_feedforward=2048, dropout=0.1,
@@ -24,15 +23,15 @@ class Transformer(nn.Module):
                  return_intermediate_dec=False):
         super().__init__()
 
-        encoder_layer = TransformerEncoderLayer(d_model, nhead, dim_feedforward,
+        encoder_layer = GatedTransformerEncoderLayer(d_model, nhead, dim_feedforward,
                                                 dropout, activation, normalize_before)
         encoder_norm = nn.LayerNorm(d_model) if normalize_before else None
-        self.encoder = TransformerEncoder(encoder_layer, num_encoder_layers, encoder_norm)
+        self.encoder = GatedTransformerEncoder(encoder_layer, num_encoder_layers, encoder_norm)
 
-        decoder_layer = TransformerDecoderLayer(d_model, nhead, dim_feedforward,
+        decoder_layer = GatedTransformerDecoderLayer(d_model, nhead, dim_feedforward,
                                                 dropout, activation, normalize_before)
         decoder_norm = nn.LayerNorm(d_model)
-        self.decoder = TransformerDecoder(decoder_layer, num_decoder_layers, decoder_norm,
+        self.decoder = GatedTransformerDecoder(decoder_layer, num_decoder_layers, decoder_norm,
                                           return_intermediate=return_intermediate_dec)
 
         self._reset_parameters()
@@ -60,7 +59,7 @@ class Transformer(nn.Module):
         return hs.transpose(1, 2), memory.permute(1, 2, 0).view(bs, c, h, w)
 
 
-class TransformerEncoder(nn.Module):
+class GatedTransformerEncoder(nn.Module):
 
     def __init__(self, encoder_layer, num_layers, norm=None):
         super().__init__()
@@ -84,7 +83,7 @@ class TransformerEncoder(nn.Module):
         return output
 
 
-class TransformerDecoder(nn.Module):
+class GatedTransformerDecoder(nn.Module):
 
     def __init__(self, decoder_layer, num_layers, norm=None, return_intermediate=False):
         super().__init__()
@@ -125,13 +124,12 @@ class TransformerDecoder(nn.Module):
         return output.unsqueeze(0)
 
 
-class TransformerEncoderLayer(nn.Module):
+class GatedTransformerEncoderLayer(nn.Module):
 
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.1,
                  activation="relu", normalize_before=False):
         super().__init__()
-        # self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
-        self.self_attn = AxialBlock_dynamic(d_model, d_model)  # maybe group should be init to nhead
+        self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
         # Implementation of Feedforward model
         self.linear1 = nn.Linear(d_model, dim_feedforward)
         self.dropout = nn.Dropout(dropout)
@@ -186,15 +184,14 @@ class TransformerEncoderLayer(nn.Module):
         return self.forward_post(src, src_mask, src_key_padding_mask, pos)
 
 
-class TransformerDecoderLayer(nn.Module):
+class GatedTransformerDecoderLayer(nn.Module):
 
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.1,
                  activation="relu", normalize_before=False):
         super().__init__()
-        # self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
-        # self.multihead_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
-        self.self_attn = AxialBlock_dynamic(d_model, d_model)  # maybe group should be init to nhead
-        self.multihead_attn = AxialBlock_dynamic(d_model, d_model)  # maybe group should be init to nhead
+
+        self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
+        self.multihead_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
         # Implementation of Feedforward model
         self.linear1 = nn.Linear(d_model, dim_feedforward)
         self.dropout = nn.Dropout(dropout)
@@ -278,7 +275,7 @@ def _get_clones(module, N):
 
 
 def build_transformer(args):
-    return Transformer(
+    return GatedTransformer(
         d_model=args.hidden_dim,
         dropout=args.dropout,
         nhead=args.nheads,

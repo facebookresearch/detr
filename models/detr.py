@@ -83,7 +83,7 @@ class DETR(nn.Module):
 class SetCriterion(nn.Module):
     """ This class computes the loss for DETR.
     The process happens in two steps:
-        1) we compute hungarian assignment between ground truth boxes and the outputs of the model
+        1) we compute hungarian assignment between ground truth boxes and the outputs_ of the model
         2) we supervise each pair of matched ground-truth / prediction (supervise class and box)
     """
     def __init__(self, num_classes, matcher, weight_dict, eos_coef, losses):
@@ -221,7 +221,7 @@ class SetCriterion(nn.Module):
         """
         outputs_without_aux = {k: v for k, v in outputs.items() if k != 'aux_outputs'}
 
-        # Retrieve the matching between the outputs of the last layer and the targets
+        # Retrieve the matching between the outputs_ of the last layer and the targets
         indices = self.matcher(outputs_without_aux, targets)
 
         # Compute the average number of target boxes accross all nodes, for normalization purposes
@@ -261,7 +261,7 @@ class PostProcess(nn.Module):
     def forward(self, outputs, target_sizes):
         """ Perform the computation
         Parameters:
-            outputs: raw outputs of the model
+            outputs: raw outputs_ of the model
             target_sizes: tensor of dimension [batch_size x 2] containing the size of each images of the batch
                           For evaluation, this must be the original image size (before any data augmentation)
                           For visualization, this should be the image size after data augment, but before padding

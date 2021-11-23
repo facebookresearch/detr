@@ -36,7 +36,7 @@ class HungarianMatcher(nn.Module):
         """ Performs the matching
 
         Params:
-            outputs: This is a dict that contains at least these entries:
+            outputs_: This is a dict that contains at least these entries:
                  "pred_logits": Tensor of dim [batch_size, num_queries, num_classes] with the classification logits
                  "pred_boxes": Tensor of dim [batch_size, num_queries, 4] with the predicted box coordinates
 
