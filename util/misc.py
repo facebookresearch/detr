@@ -404,7 +404,7 @@ def save_on_master(*args, **kwargs):
     if is_main_process():
         torch.save(*args, **kwargs)
 
-        
+
 def save_json(results, save_dir):
     with open(save_dir, 'w') as f:
         f.write(json.dumps(results))
