@@ -32,7 +32,7 @@ class CocoEvaluator(object):
 
         self.img_ids = []
         self.eval_imgs = {k: [] for k in iou_types}
-        self.coco_json_predictions = []
+        self.coco_predictions = []
 
     def update(self, predictions):
         img_ids = list(np.unique(list(predictions.keys())))
@@ -40,7 +40,7 @@ class CocoEvaluator(object):
 
         for iou_type in self.iou_types:
             results = self.prepare(predictions, iou_type)
-            self.coco_json_predictions.extend(results)
+            self.coco_predictions.extend(results)
 
             # suppress pycocotools prints
             with open(os.devnull, 'w') as devnull:
