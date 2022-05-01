@@ -18,6 +18,15 @@ from models import build_model
 
 
 from dataset import LabeledDataset
+import transforms as T
+
+def get_transform(train):
+    transforms = []
+    transforms.append(T.ToTensor())
+    if train:
+        transforms.append(T.RandomHorizontalFlip(0.5))
+        transforms.append(T.RandomVerticalFlip(0.5))
+    return T.Compose(transforms)
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
@@ -141,8 +150,8 @@ def main(args):
                                   weight_decay=args.weight_decay)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop)
 
-    dataset_train = LabeledDataset(root='/scratch/yk1962/datasets/labeled_data', split="training")
-    dataset_val = LabeledDataset(root='/scratch/yk1962/datasets/labeled_data', split="validation")
+    dataset_train = LabeledDataset(root='/scratch/yk1962/datasets/labeled_data', split="training",  transforms=get_transform(train=True))
+    dataset_val = LabeledDataset(root='/scratch/yk1962/datasets/labeled_data', split="validation",  transforms=get_transform(train=False))
 
     # if args.distributed:
     #     sampler_train = DistributedSampler(dataset_train)
