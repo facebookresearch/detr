@@ -141,8 +141,8 @@ def main(args):
                                   weight_decay=args.weight_decay)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop)
 
-    dataset_train = LabeledDataset(root='/labeled', split="training")
-    dataset_val = LabeledDataset(root='/labeled', split="validation")
+    dataset_train = LabeledDataset(root='/scratch/yk1962/datasets/labeled_data', split="training")
+    dataset_val = LabeledDataset(root='/scratch/yk1962/datasets/labeled_data', split="validation")
 
     # if args.distributed:
     #     sampler_train = DistributedSampler(dataset_train)
