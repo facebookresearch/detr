@@ -153,12 +153,12 @@ def main(args):
     dataset_train = LabeledDataset(root='/scratch/yk1962/datasets/labeled_data', split="training",  transforms=get_transform(train=True))
     dataset_val = LabeledDataset(root='/scratch/yk1962/datasets/labeled_data', split="validation",  transforms=get_transform(train=False))
 
-    # if args.distributed:
-    #     sampler_train = DistributedSampler(dataset_train)
-    #     sampler_val = DistributedSampler(dataset_val, shuffle=False)
-    # else:
-    #     sampler_train = torch.utils.data.RandomSampler(dataset_train)
-    #     sampler_val = torch.utils.data.SequentialSampler(dataset_val)
+    if args.distributed:
+        sampler_train = DistributedSampler(dataset_train)
+        sampler_val = DistributedSampler(dataset_val, shuffle=False)
+    else:
+        sampler_train = torch.utils.data.RandomSampler(dataset_train)
+        sampler_val = torch.utils.data.SequentialSampler(dataset_val)
     # train_dataset =
     # train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=2, shuffle=True, num_workers=2, collate_fn=utils.collate_fn)
     #
