@@ -17,17 +17,6 @@ from engine import evaluate, train_one_epoch
 from models import build_model
 
 
-from dataset import LabeledDataset
-import transforms as T
-
-def get_transform(train):
-    transforms = []
-    transforms.append(T.ToTensor())
-    if train:
-        transforms.append(T.RandomHorizontalFlip(0.5))
-        transforms.append(T.RandomVerticalFlip(0.5))
-    return T.Compose(transforms)
-
 def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
     parser.add_argument('--lr', default=1e-4, type=float)
@@ -150,8 +139,8 @@ def main(args):
                                   weight_decay=args.weight_decay)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop)
 
-    dataset_train = LabeledDataset(root='/scratch/yk1962/datasets/labeled_data', split="training",  transforms=get_transform(train=True))
-    dataset_val = LabeledDataset(root='/scratch/yk1962/datasets/labeled_data', split="validation",  transforms=get_transform(train=False))
+    dataset_train = build_dataset(image_set='train', args=args)
+    dataset_val = build_dataset(image_set='val', args=args)
 
     if args.distributed:
         sampler_train = DistributedSampler(dataset_train)
@@ -159,11 +148,6 @@ def main(args):
     else:
         sampler_train = torch.utils.data.RandomSampler(dataset_train)
         sampler_val = torch.utils.data.SequentialSampler(dataset_val)
-    # train_dataset =
-    # train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=2, shuffle=True, num_workers=2, collate_fn=utils.collate_fn)
-    #
-    # valid_dataset =
-    # valid_loader = torch.utils.data.DataLoader(valid_dataset, batch_size=2, shuffle=False, num_workers=2, collate_fn=utils.collate_fn)
 
     batch_sampler_train = torch.utils.data.BatchSampler(
         sampler_train, args.batch_size, drop_last=True)
