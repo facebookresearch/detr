@@ -34,25 +34,46 @@ model_urls = {
     "wide_resnet50_2": "https://download.pytorch.org/models/wide_resnet50_2-95faca4d.pth",
     "wide_resnet101_2": "https://download.pytorch.org/models/wide_resnet101_2-32ee1156.pth",
 }
-
-
-def conv3x3(in_planes: int, out_planes: int, stride: int = 1, groups: int = 1, dilation: int = 1) -> nn.Conv2d:
+from .quan_dorefa import QuanConv
+def conv3x3(in_planes: int, out_planes: int, stride: int = 1, groups: int = 1, dilation: int = 1) -> QuanConv:
     """3x3 convolution with padding"""
-    return nn.Conv2d(
+    return QuanConv(
         in_planes,
         out_planes,
         kernel_size=3,
+        quan_name_w='dorefa',
+        quan_name_a='dorefa',
+        nbit_w=8,
+        nbit_a=32,
         stride=stride,
         padding=dilation,
-        groups=groups,
-        bias=False,
-        dilation=dilation,
+        
     )
 
 
-def conv1x1(in_planes: int, out_planes: int, stride: int = 1) -> nn.Conv2d:
+def conv1x1(in_planes: int, out_planes: int, stride: int = 1) -> QuanConv:
     """1x1 convolution"""
-    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
+    return QuanConv(in_planes, out_planes, kernel_size=1, quan_name_w='dorefa', quan_name_a='dorefa', nbit_w=8,
+                 nbit_a=32, stride=stride, bias=False)
+
+# def conv3x3(in_planes: int, out_planes: int, stride: int = 1, groups: int = 1, dilation: int = 1) -> nn.Conv2d:
+#     """3x3 convolution with padding"""
+#     return nn.Conv2d(
+#         in_planes,
+#         out_planes,
+#         kernel_size=3,
+#         stride=stride,
+#         padding=dilation,
+#         groups=groups,
+#         bias=False,
+#         dilation=dilation,
+#     )
+
+
+# def conv1x1(in_planes: int, out_planes: int, stride: int = 1) -> nn.Conv2d:
+#     """1x1 convolution"""
+#     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
+
 
 
 class BasicBlock(nn.Module):

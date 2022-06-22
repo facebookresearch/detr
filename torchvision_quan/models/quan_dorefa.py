@@ -83,7 +83,7 @@ class QuanConv(nn.Conv2d):
     def __init__(self, in_channels, out_channels, kernel_size, quan_name_w='dorefa', quan_name_a='dorefa', nbit_w=32,
                  nbit_a=32, stride=1,
                  padding=0, dilation=1, groups=1,
-                 bias=True):
+                 bias=False):
         super(QuanConv, self).__init__(
             in_channels, out_channels, kernel_size, stride, padding, dilation,
             groups, bias)
