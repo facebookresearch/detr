@@ -7,6 +7,7 @@ from collections import OrderedDict
 import torch
 import torch.nn.functional as F
 import torchvision
+import torchvision_quan
 from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
 from typing import Dict, List
@@ -91,6 +92,19 @@ class Backbone(BackboneBase):
             pretrained=is_main_process(), norm_layer=FrozenBatchNorm2d)
         num_channels = 512 if name in ('resnet18', 'resnet34') else 2048
         super().__init__(backbone, train_backbone, num_channels, return_interm_layers)
+        
+class Quantized_Backbone(BackboneBase):
+    """ResNet backbone with frozen BatchNorm."""
+    def __init__(self, name: str,
+                 train_backbone: bool,
+                 return_interm_layers: bool,
+                 dilation: bool):
+        backbone = getattr(torchvision_quan.models, name)(
+            replace_stride_with_dilation=[False, False, dilation],
+            pretrained=is_main_process(), norm_layer=FrozenBatchNorm2d)
+        num_channels = 512 if name in ('resnet18', 'resnet34') else 2048
+        super().__init__(backbone, train_backbone, num_channels, return_interm_layers)
+
 
 
 class Joiner(nn.Sequential):

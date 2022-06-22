@@ -1,0 +1,11 @@
+nohup: ignoring input
+Traceback (most recent call last):
+  File "validate.py", line 19, in <module>
+    from models.quantization.mobilenetv3 import mobilenet_v3_large
+  File "/home/zhangyifan/torchvision_zyf/models/__init__.py", line 8, in <module>
+    from .mobilenet import *
+  File "/home/zhangyifan/torchvision_zyf/models/mobilenet.py", line 1, in <module>
+    from .mobilenetv2 import MobileNetV2, mobilenet_v2, __all__ as mv2_all
+  File "/home/zhangyifan/torchvision_zyf/models/mobilenetv2.py", line 8, in <module>
+    from .._internally_replaced_utils import load_state_dict_from_url
+ValueError: attempted relative import beyond top-level package
