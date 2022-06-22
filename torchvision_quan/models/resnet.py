@@ -7,8 +7,7 @@ from torch import Tensor
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..utils import _log_api_usage_once
 
-from .common import Quan_Conv
-
+from .quan_dorefa import QuanConv
 __all__ = [
     "ResNet",
     "resnet18",
@@ -34,7 +33,7 @@ model_urls = {
     "wide_resnet50_2": "https://download.pytorch.org/models/wide_resnet50_2-95faca4d.pth",
     "wide_resnet101_2": "https://download.pytorch.org/models/wide_resnet101_2-32ee1156.pth",
 }
-from .quan_dorefa import QuanConv
+
 def conv3x3(in_planes: int, out_planes: int, stride: int = 1, groups: int = 1, dilation: int = 1) -> QuanConv:
     """3x3 convolution with padding"""
     return QuanConv(
@@ -47,7 +46,6 @@ def conv3x3(in_planes: int, out_planes: int, stride: int = 1, groups: int = 1, d
         nbit_a=32,
         stride=stride,
         padding=dilation,
-        
     )
 
 
