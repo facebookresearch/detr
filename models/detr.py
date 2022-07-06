@@ -40,6 +40,7 @@ class DETR(nn.Module):
         self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
         self.backbone = backbone
         self.aux_loss = aux_loss
+        self.bev_embed = nn.Linear(hidden_dim, 2)
 
     def forward(self, samples: NestedTensor):
         """ The forward expects a NestedTensor, which consists of:
@@ -66,18 +67,19 @@ class DETR(nn.Module):
 
         outputs_class = self.class_embed(hs)
         outputs_coord = self.bbox_embed(hs).sigmoid()
-        out = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1]}
+        outputs_bev = self.bev_embed(hs)
+        out = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1], 'pred_bev': outputs_bev[-1]}
         if self.aux_loss:
-            out['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_coord)
+            out['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_coord, outputs_bev)
         return out
 
     @torch.jit.unused
-    def _set_aux_loss(self, outputs_class, outputs_coord):
+    def _set_aux_loss(self, outputs_class, outputs_coord, outputs_bev):
         # this is a workaround to make torchscript happy, as torchscript
         # doesn't support dictionary with non-homogeneous values, such
         # as a dict having both a Tensor and a list.
-        return [{'pred_logits': a, 'pred_boxes': b}
-                for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
+        return [{'pred_logits': a, 'pred_boxes': b, 'pred_bev': c}
+                for a, b, c in zip(outputs_class[:-1], outputs_coord[:-1], outputs_bev[:-1])]
 
 
 class SetCriterion(nn.Module):
@@ -190,6 +192,15 @@ class SetCriterion(nn.Module):
         }
         return losses
 
+    def loss_bev(self, outputs, targets, indices, num_boxes):
+        assert 'pred_bev' in outputs
+        idx = self._get_src_permutation_idx(indices)
+        src_bev = outputs['pred_bev'][idx].squeeze()
+        target_bev = torch.cat([t['bev'][i] for t, (_, i) in zip(targets, indices)])
+        loss = F.mse_loss(src_bev, target_bev)
+        losses = {'loss_bev' : loss}
+        return losses
+
     def _get_src_permutation_idx(self, indices):
         # permute predictions following indices
         batch_idx = torch.cat([torch.full_like(src, i) for i, (src, _) in enumerate(indices)])
@@ -203,11 +214,18 @@ class SetCriterion(nn.Module):
         return batch_idx, tgt_idx
 
     def get_loss(self, loss, outputs, targets, indices, num_boxes, **kwargs):
+        # loss_map = {
+        #     'labels': self.loss_labels,
+        #     'cardinality': self.loss_cardinality,
+        #     'boxes': self.loss_boxes,
+        #     'masks': self.loss_masks
+        # }
         loss_map = {
             'labels': self.loss_labels,
             'cardinality': self.loss_cardinality,
             'boxes': self.loss_boxes,
-            'masks': self.loss_masks
+            'masks': self.loss_masks,
+            'bev': self.loss_bev
         }
         assert loss in loss_map, f'do you really want to compute {loss} loss?'
         return loss_map[loss](outputs, targets, indices, num_boxes, **kwargs)
@@ -310,7 +328,8 @@ def build(args):
     # you should pass `num_classes` to be 2 (max_obj_id + 1).
     # For more details on this, check the following discussion
     # https://github.com/facebookresearch/detr/issues/108#issuecomment-650269223
-    num_classes = 20 if args.dataset_file != 'coco' else 91
+    # num_classes = 20 if args.dataset_file != 'coco' else 91
+    num_classes = arg.num_classes+1 if args.dataset_file != 'coco' else 91
     if args.dataset_file == "coco_panoptic":
         # for panoptic, we just add a num_classes that is large enough to hold
         # max_obj_id + 1, but the exact value doesn't really matter
@@ -333,6 +352,7 @@ def build(args):
     matcher = build_matcher(args)
     weight_dict = {'loss_ce': 1, 'loss_bbox': args.bbox_loss_coef}
     weight_dict['loss_giou'] = args.giou_loss_coef
+    weight_dict['loss_bev'] = args.bev_loss_coef
     if args.masks:
         weight_dict["loss_mask"] = args.mask_loss_coef
         weight_dict["loss_dice"] = args.dice_loss_coef
@@ -343,7 +363,7 @@ def build(args):
             aux_weight_dict.update({k + f'_{i}': v for k, v in weight_dict.items()})
         weight_dict.update(aux_weight_dict)
 
-    losses = ['labels', 'boxes', 'cardinality']
+    losses = ['labels', 'boxes', 'cardinality', 'bev']
     if args.masks:
         losses += ["masks"]
     criterion = SetCriterion(num_classes, matcher=matcher, weight_dict=weight_dict,
