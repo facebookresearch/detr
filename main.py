@@ -191,7 +191,7 @@ def main(args):
         else:
             print('loading pretrianed weights.....')
             checkpoint = torch.load(args.resume, map_location='cpu')
-        model_without_ddp.load_state_dict(checkpoint['model'])
+        # model_without_ddp.load_state_dict(checkpoint['model'])
         del checkpoint["model"]["class_embed.weight"]
         del checkpoint["model"]["class_embed.bias"]
         # Remove box weights
