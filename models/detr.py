@@ -40,7 +40,9 @@ class DETR(nn.Module):
         self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
         self.backbone = backbone
         self.aux_loss = aux_loss
-        self.bev_embed = nn.Linear(hidden_dim, 2)
+        self.bev_embed = MLP(hidden_dim, hidden_dim, 2, 2)
+        self.angle_embed = MLP(hidden_dim, hidden_dim, 24, 2)
+        self.dim_embed = MLP(hidden_dim, hidden_dim, 2, 2)
 
     def forward(self, samples: NestedTensor):
         """ The forward expects a NestedTensor, which consists of:
@@ -68,18 +70,20 @@ class DETR(nn.Module):
         outputs_class = self.class_embed(hs)
         outputs_coord = self.bbox_embed(hs).sigmoid()
         outputs_bev = self.bev_embed(hs)
-        out = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1], 'pred_bev': outputs_bev[-1]}
+        outputs_dim = self.dim_embed(hs)
+        outputs_angle = self.angle_embed(hs)
+        out = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1], 'pred_bev': outputs_bev[-1], 'pred_dim': outputs_dim[-1], 'pred_angle': outputs_angle[-1]}
         if self.aux_loss:
-            out['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_coord, outputs_bev)
+            out['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_coord, outputs_bev, outputs_dim, outputs_angle)
         return out
 
     @torch.jit.unused
-    def _set_aux_loss(self, outputs_class, outputs_coord, outputs_bev):
+    def _set_aux_loss(self, outputs_class, outputs_coord, outputs_bev, outputs_dim, outputs_angle):
         # this is a workaround to make torchscript happy, as torchscript
         # doesn't support dictionary with non-homogeneous values, such
         # as a dict having both a Tensor and a list.
-        return [{'pred_logits': a, 'pred_boxes': b, 'pred_bev': c}
-                for a, b, c in zip(outputs_class[:-1], outputs_coord[:-1], outputs_bev[:-1])]
+        return [{'pred_logits': a, 'pred_boxes': b, 'pred_bev': c, 'pred_dim': d, 'pred_angle': e}
+                for a, b, c, d, e in zip(outputs_class[:-1], outputs_coord[:-1], outputs_bev[:-1], outputs_dim[:-1], outputs_angle[:-1])]
 
 
 class SetCriterion(nn.Module):
@@ -201,6 +205,57 @@ class SetCriterion(nn.Module):
         losses = {'loss_bev' : loss}
         return losses
 
+    def loss_dims(self, outputs, targets, indices, num_boxes):
+        assert 'pred_dim' in outputs
+        # idx = self._get_src_permutation_idx(indices)
+        # src_dim = outputs['pred_dim'][idx].squeeze()
+        # target_dim = torch.cat([t['dim'][i] for t, (_, i) in zip(targets, indices)])
+        # loss = F.mse_loss(src_dim, target_dim)
+        # losses = {'loss_bev' : loss}
+
+        idx = self._get_src_permutation_idx(indices)
+        src_dims = outputs['pred_dim'][idx]
+        target_dims = torch.cat([t['dim'][i] for t, (_, i) in zip(targets, indices)], dim=0)
+
+        dimension = target_dims.clone().detach()
+        dim_loss = torch.abs(src_dims - target_dims)
+        dim_loss /= dimension
+        with torch.no_grad():
+            compensation_weight = F.l1_loss(src_dims, target_dims) / dim_loss.mean()
+        dim_loss *= compensation_weight
+        losses = {}
+        losses['loss_dim'] = dim_loss.sum() / num_boxes
+
+        return losses
+    
+    def loss_angles(self, outputs, targets, indices, num_boxes):  
+
+        idx = self._get_src_permutation_idx(indices)
+        heading_input = outputs['pred_angle'][idx]
+        target_heading_cls = torch.cat([t['heading_bin'][i] for t, (_, i) in zip(targets, indices)], dim=0)
+        target_heading_res = torch.cat([t['heading_res'][i] for t, (_, i) in zip(targets, indices)], dim=0)
+
+        heading_input = heading_input.view(-1, 24)
+        heading_target_cls = target_heading_cls.view(-1).long()
+        heading_target_res = target_heading_res.view(-1)
+
+        # classification loss
+        heading_input_cls = heading_input[:, 0:12]
+        cls_loss = F.cross_entropy(heading_input_cls, heading_target_cls, reduction='none')
+
+        # regression loss
+        heading_input_res = heading_input[:, 12:24]
+        cls_onehot = torch.zeros(heading_target_cls.shape[0], 12).cuda().scatter_(dim=1, index=heading_target_cls.view(-1, 1), value=1)
+        heading_input_res = torch.sum(heading_input_res * cls_onehot, 1)
+        reg_loss = F.l1_loss(heading_input_res, heading_target_res, reduction='none')
+        
+        angle_loss = cls_loss + reg_loss
+        losses = {}
+        losses['loss_angle'] = angle_loss.sum() / num_boxes 
+        return losses
+
+    
+
     def _get_src_permutation_idx(self, indices):
         # permute predictions following indices
         batch_idx = torch.cat([torch.full_like(src, i) for i, (src, _) in enumerate(indices)])
@@ -225,7 +280,9 @@ class SetCriterion(nn.Module):
             'cardinality': self.loss_cardinality,
             'boxes': self.loss_boxes,
             'masks': self.loss_masks,
-            'bev': self.loss_bev
+            'bev': self.loss_bev,
+            'dim': self.loss_dims,
+            'angle': self.loss_angles
         }
         assert loss in loss_map, f'do you really want to compute {loss} loss?'
         return loss_map[loss](outputs, targets, indices, num_boxes, **kwargs)
@@ -353,6 +410,8 @@ def build(args):
     weight_dict = {'loss_ce': 1, 'loss_bbox': args.bbox_loss_coef}
     weight_dict['loss_giou'] = args.giou_loss_coef
     weight_dict['loss_bev'] = args.bev_loss_coef
+    weight_dict['loss_dim'] = args.dim_loss_coef
+    weight_dict['loss_angle'] = args.angle_loss_coef
     if args.masks:
         weight_dict["loss_mask"] = args.mask_loss_coef
         weight_dict["loss_dice"] = args.dice_loss_coef
@@ -363,7 +422,7 @@ def build(args):
             aux_weight_dict.update({k + f'_{i}': v for k, v in weight_dict.items()})
         weight_dict.update(aux_weight_dict)
 
-    losses = ['labels', 'boxes', 'cardinality', 'bev']
+    losses = ['labels', 'boxes', 'cardinality', 'bev', 'dim', 'angle']
     if args.masks:
         losses += ["masks"]
     criterion = SetCriterion(num_classes, matcher=matcher, weight_dict=weight_dict,

@@ -37,6 +37,6 @@ for i in tqdm(range(len(data['images']))):
     bevdim_data[i+1] = bevdim #torch.tensor(depth) 
 
 # Save bev data as json file
-output_path = '/srip-vol/datasets/KITTI3D/coco/bevdim_%s.json' %(split)
+output_path = '/srip-vol/datasets/KITTI3D/coco/bev_dim_%s.json' %(split)
 with open(output_path, "w") as outfile:
     json.dump(bevdim_data, outfile)

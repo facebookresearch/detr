@@ -17,12 +17,18 @@ import datasets.transforms as T
 
 
 class CocoDetection(torchvision.datasets.CocoDetection):
-    def __init__(self, img_folder, ann_file, transforms, return_masks, bev_data = None):
+    def __init__(self, img_folder, ann_file, transforms, return_masks, bev_data = None, dim_data = None, heading_bin_data = None, heading_res_data = None):
         super(CocoDetection, self).__init__(img_folder, ann_file)
         self._transforms = transforms
         self.prepare = ConvertCocoPolysToMask(return_masks)
         if bev_data is not None:
             self.bev_data = json.load(open(bev_data))
+        if dim_data is not None:
+            self.dim_data = json.load(open(dim_data))
+        if heading_bin_data is not None:
+            self.heading_bin_data = json.load(open(heading_bin_data))
+        if heading_res_data is not None:
+            self.heading_res_data = json.load(open(heading_res_data))
 
     def __getitem__(self, idx):
         img, target = super(CocoDetection, self).__getitem__(idx)
@@ -31,8 +37,17 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         img, target = self.prepare(img, target)
         if self._transforms is not None:
             img, target = self._transforms(img, target)
+        # load the bev data
         target['bev'] = torch.tensor(self.bev_data[str(image_id)])
         assert target['bev'].size()[0] == target['boxes'].size()[0]
+        # load the dimension data
+        target['dim'] = torch.tensor(self.dim_data[str(image_id)])
+        assert target['dim'].size()[0] == target['boxes'].size()[0]
+        # load the angle data
+        target['heading_bin'] = torch.tensor(self.heading_bin_data[str(image_id)])
+        assert target['heading_bin'].size()[0] == target['boxes'].size()[0]
+        target['heading_res'] = torch.tensor(self.heading_res_data[str(image_id)])
+        assert target['heading_res'].size()[0] == target['boxes'].size()[0]
         return img, target
 
 
@@ -175,5 +190,8 @@ def build_kitti_coco(image_set, args):
         "val": (Path("/srip-vol/datasets/KITTI3D/training/image_2"), anno_root / f'kitti_{image_set}.json'),
     }
     BEV_DATA = "/srip-vol/datasets/KITTI3D/coco/bev_%s.json"%(image_set)
+    DIM_DATA = "/srip-vol/datasets/KITTI3D/coco/dim_%s.json"%(image_set)
+    HEADING_BIN_DATA = "/srip-vol/datasets/KITTI3D/coco/heading_bins_%s.json"%(image_set)
+    HEADING_RES_DATA = "/srip-vol/datasets/KITTI3D/coco/heading_ress_%s.json"%(image_set)
     img_folder, ann_file = PATHS[image_set]
-    dataset = CocoDetection(img_folder, ann_file, transforms=make_coco_transforms(image_set), return_masks=args.masks, bev_data = BEV_DATA)
+    dataset = CocoDetection(img_folder, ann_file, transforms=make_coco_transforms(image_set), return_masks=args.masks, bev_data = BEV_DATA, heading_bin_data = HEADING_BIN_DATA, heading_res_data = HEADING_RES_DATA)

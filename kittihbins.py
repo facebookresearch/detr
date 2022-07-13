@@ -92,8 +92,8 @@ for i in tqdm(range(len(data['images']))):
         # x_c = float(label_data[11])
         # z_c = float(label_data[13])
 
-        heading_bins.append([heading_bin])
-        heading_ress.append([heading_res])
+        heading_bins.append(heading_bin)
+        heading_ress.append(heading_res)
 
     # Save in dict
     heading_bins_data[i+1] = heading_bins #torch.tensor(depth) 
