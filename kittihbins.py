@@ -63,7 +63,7 @@ for i in tqdm(range(len(data['images']))):
     # obj = lines_calib[5].strip().split(' ')[1:]
     # Tr_velo_to_cam = np.array(obj, dtype=np.float32)
 
-    P2.reshape(3, 4)
+    P2 = P2.reshape(3, 4)
     # P3.reshape(3, 4)
     # R0.reshape(3, 3)
     # Tr_velo_to_cam.reshape(3, 4)
