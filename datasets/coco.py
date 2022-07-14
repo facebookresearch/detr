@@ -195,3 +195,4 @@ def build_kitti_coco(image_set, args):
     HEADING_RES_DATA = "/srip-vol/datasets/KITTI3D/coco/heading_ress_%s.json"%(image_set)
     img_folder, ann_file = PATHS[image_set]
     dataset = CocoDetection(img_folder, ann_file, transforms=make_coco_transforms(image_set), return_masks=args.masks, bev_data = BEV_DATA, heading_bin_data = HEADING_BIN_DATA, heading_res_data = HEADING_RES_DATA)
+    return dataset
