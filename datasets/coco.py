@@ -23,6 +23,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         self.prepare = ConvertCocoPolysToMask(return_masks)
         if bev_data is not None:
             self.bev_data = json.load(open(bev_data))
+            self.bev_coor = json.load(open(bev_data))
         if dim_data is not None:
             self.dim_data = json.load(open(dim_data))
         if heading_bin_data is not None:
@@ -48,7 +49,10 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         assert target['heading_bin'].size()[0] == target['boxes'].size()[0]
         target['heading_res'] = torch.tensor(self.heading_res_data[str(image_id)])
         assert target['heading_res'].size()[0] == target['boxes'].size()[0]
-        return img, target
+        b_coordinate = torch.tensor([self.bev_coor[str(image_id)]])
+        # b_coordinate = self.bev_coor[str(image_id)]
+        return img, target, b_coordinate
+
 
 
 def convert_coco_poly_to_mask(segmentations, height, width):
