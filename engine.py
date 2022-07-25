@@ -25,11 +25,25 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     header = 'Epoch: [{}]'.format(epoch)
     print_freq = 10
 
-    for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
+    for samples, targets, b_coordinates in metric_logger.log_every(data_loader, print_freq, header):
+        # print(samples)
         samples = samples.to(device)
+
+        # size 
+        # print(b_coordinates[0].size())
+        # print(b_coordinates[3])
+        b_m1 = torch.mean(b_coordinates[0], 1, True)
+        # print(b_m1.size())
+        # print(b_coordinates[3])
+        b_m2 = torch.mean(b_coordinates[1], 1, True)
+        temp = torch.cat((b_m1, b_m2), 0)
+        temp = temp.squeeze(1)
+        temp = temp.to(device)
+
+        # print(temp.size())
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-        outputs = model(samples)
+        outputs = model(samples, temp)
         loss_dict = criterion(outputs, targets)
         weight_dict = criterion.weight_dict
         losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
@@ -85,11 +99,26 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
             output_dir=os.path.join(output_dir, "panoptic_eval"),
         )
 
-    for samples, targets in metric_logger.log_every(data_loader, 10, header):
+    for samples, targets, b_coordinates in metric_logger.log_every(data_loader, 10, header):
         samples = samples.to(device)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-        outputs = model(samples)
+        # print(b_coordinates)
+        if len(b_coordinates) == 0:
+            print(samples)
+            temp = torch.zeros([1, 2], dtype=torch.float64)
+        elif len(b_coordinates) == 1:
+            b_m1 = torch.mean(b_coordinates[0], 1, True)
+            temp = b_m1.squeeze(1)
+        else:
+            b_m1 = torch.mean(b_coordinates[0], 1, True)
+            b_m2 = torch.mean(b_coordinates[1], 1, True)
+            temp = torch.cat((b_m1, b_m2), 0)
+            temp = temp.squeeze(1)
+        # temp = b_m1.squeeze(1)
+        temp = temp.to(device)
+
+        outputs = model(samples, temp)
         loss_dict = criterion(outputs, targets)
         weight_dict = criterion.weight_dict
 
