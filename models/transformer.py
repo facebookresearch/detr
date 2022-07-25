@@ -38,20 +38,34 @@ class Transformer(nn.Module):
 
         self.d_model = d_model
         self.nhead = nhead
+         
+        self.linear_b = nn.Linear(2, 100)
+        self.conv_b = nn.Conv1d(in_channels=1, out_channels=256,kernel_size=1)
 
     def _reset_parameters(self):
         for p in self.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
-    def forward(self, src, mask, query_embed, pos_embed):
+    def forward(self, src, mask, query_embed, pos_embed, b_coordinate):
         # flatten NxCxHxW to HWxNxC
         bs, c, h, w = src.shape
         src = src.flatten(2).permute(2, 0, 1)
         pos_embed = pos_embed.flatten(2).permute(2, 0, 1)
         query_embed = query_embed.unsqueeze(1).repeat(1, bs, 1)
         mask = mask.flatten(1)
+         
+        # From N*2 to N*num_queries 
+        b_coordinate = self.linear_b(b_coordinate)
+        # From N*num_queries to N*1*num_queries
+        b_coordinate = b_coordinate.unsqueeze(1)
+        # From N*1*num_quries to N*hidden_dim*num_queries
+        b_coordinate = self.conv_b(b_coordinate)
+        # From N*hidden_dim*num_queries to num_quries*N*hidden_dim
+        b_coordinate = b_coordinate.permute(2, 0, 1)
 
+        query_embed = query_embed + b_coordinate
+        
         tgt = torch.zeros_like(query_embed)
         memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
         hs = self.decoder(tgt, memory, memory_key_padding_mask=mask,
