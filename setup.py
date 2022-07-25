@@ -1,6 +1,6 @@
 import os
 from codecs import open as copen
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 # Get the long description from README.md
@@ -15,6 +15,7 @@ __version__ = 'v0.2'
 setup(
     name='detr',
     version=__version__,
+    packages=find_packages(),
     description="DETR: End-to-End Object Detection with Transformers",
     long_description=long_description,
     long_description_content_type="text/markdown",
