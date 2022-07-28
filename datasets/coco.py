@@ -195,9 +195,9 @@ def build_kitti_coco(image_set, args):
         "val": (Path("/srip-vol/datasets/KITTI3D/training/image_2"), anno_root / f'kitti_{image_set}.json'),
     }
     BEV_DATA = "/srip-vol/datasets/KITTI3D/coco/bev_%s.json"%(image_set)
-    DIM_DATA = "/srip-vol/datasets/KITTI3D/coco/dim_%s.json"%(image_set)
+    DIM_DATA = "/srip-vol/datasets/KITTI3D/coco/bev_dim_%s.json"%(image_set)
     HEADING_BIN_DATA = "/srip-vol/datasets/KITTI3D/coco/heading_bins_%s.json"%(image_set)
     HEADING_RES_DATA = "/srip-vol/datasets/KITTI3D/coco/heading_ress_%s.json"%(image_set)
     img_folder, ann_file = PATHS[image_set]
-    dataset = CocoDetection(img_folder, ann_file, transforms=make_coco_transforms(image_set), return_masks=args.masks, bev_data = BEV_DATA, heading_bin_data = HEADING_BIN_DATA, heading_res_data = HEADING_RES_DATA)
+    dataset = CocoDetection(img_folder, ann_file, transforms=make_coco_transforms(image_set), return_masks=args.masks, bev_data = BEV_DATA, dim_data = DIM_DATA, heading_bin_data = HEADING_BIN_DATA, heading_res_data = HEADING_RES_DATA)
     return dataset
