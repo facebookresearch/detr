@@ -64,9 +64,16 @@ class Transformer(nn.Module):
         # From N*hidden_dim*num_queries to num_quries*N*hidden_dim
         # b_coordinate = b_coordinate.permute(2, 0, 1)
         # query_embed = query_embed + b_coordinate
-        query_B = query_B.permute(1, 0, 2)
+        
+        # 6 * N * num_queries * hidden_dim to num_queries * N * hidden_dim * 6
+        query_B = query_B.permute(2, 1, 3, 0)
+        # num_queries * N * hidden_dim * 6 to num_queries * N * hidden_dim * 1
+        query_B = self.linear_Q(query_B)
+        # num_queries * N * hidden_dim * 1 to num_queries * N * 1 * hidden_dim
+        query_B = query_B.permute(0, 1, 3, 2)
+        # num_queries * N * 1 * hidden_dim to num_queries * N * hidden_dim
+        query_B = query_embed.squeeze(2)
         query_embed = query_embed + query_B
-
 
         tgt = torch.zeros_like(query_embed)
         memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
