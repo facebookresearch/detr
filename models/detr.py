@@ -16,11 +16,12 @@ from .matcher import build_matcher
 from .segmentation import (DETRsegm, PostProcessPanoptic, PostProcessSegm,
                            dice_loss, sigmoid_focal_loss)
 from .transformer import build_transformer
+from .transformer_BEV import build_transformer_BEV
 
 
 class DETR(nn.Module):
     """ This is the DETR module that performs object detection """
-    def __init__(self, backbone, transformer, num_classes, num_queries, aux_loss=False):
+    def __init__(self, backbone, transformer, transformer_BEV, num_classes, num_queries, aux_loss=False):
         """ Initializes the model.
         Parameters:
             backbone: torch module of the backbone to be used. See backbone.py
@@ -33,6 +34,7 @@ class DETR(nn.Module):
         super().__init__()
         self.num_queries = num_queries
         self.transformer = transformer
+        self.transformer_BEV = transformer_BEV
         hidden_dim = transformer.d_model
         self.class_embed = nn.Linear(hidden_dim, num_classes + 1)
         self.bbox_embed = MLP(hidden_dim, hidden_dim, 4, 3)
@@ -44,7 +46,7 @@ class DETR(nn.Module):
         self.angle_embed = MLP(hidden_dim, hidden_dim, 24, 2)
         self.dim_embed = MLP(hidden_dim, hidden_dim, 2, 2)
 
-    def forward(self, samples: NestedTensor, b_coordinate):
+    def forward(self, samples: NestedTensor):
         """ The forward expects a NestedTensor, which consists of:
                - samples.tensor: batched images, of shape [batch_size x 3 x H x W]
                - samples.mask: a binary mask of shape [batch_size x H x W], containing 1 on padded pixels
@@ -65,7 +67,9 @@ class DETR(nn.Module):
 
         src, mask = features[-1].decompose()
         assert mask is not None
-        hs = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1], b_coordinate)[0]
+        query_B = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1])[0]
+        print(query_B.size())
+        hs = self.transformer_BEV(self.input_proj(src), mask, self.query_embed.weight, pos[-1], query_B)[0]
 
         outputs_class = self.class_embed(hs)
         outputs_coord = self.bbox_embed(hs).sigmoid()
@@ -396,10 +400,12 @@ def build(args):
     backbone = build_backbone(args)
 
     transformer = build_transformer(args)
+    transformer_BEV = build_transformer_BEV(args)
 
     model = DETR(
         backbone,
         transformer,
+        transformer_BEV,
         num_classes=num_classes,
         num_queries=args.num_queries,
         aux_loss=args.aux_loss,

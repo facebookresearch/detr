@@ -49,9 +49,10 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         assert target['heading_bin'].size()[0] == target['boxes'].size()[0]
         target['heading_res'] = torch.tensor(self.heading_res_data[str(image_id)])
         assert target['heading_res'].size()[0] == target['boxes'].size()[0]
-        b_coordinate = torch.tensor([self.bev_coor[str(image_id)]])
+        # b_coordinate = torch.tensor([self.bev_coor[str(image_id)]])
         # b_coordinate = self.bev_coor[str(image_id)]
-        return img, target, b_coordinate
+        return img, target
+        
 
 
 

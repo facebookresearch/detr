@@ -47,7 +47,7 @@ class Transformer(nn.Module):
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
-    def forward(self, src, mask, query_embed, pos_embed):
+    def forward(self, src, mask, query_embed, pos_embed, query_B):
         # flatten NxCxHxW to HWxNxC
         bs, c, h, w = src.shape
         src = src.flatten(2).permute(2, 0, 1)
@@ -64,7 +64,10 @@ class Transformer(nn.Module):
         # From N*hidden_dim*num_queries to num_quries*N*hidden_dim
         # b_coordinate = b_coordinate.permute(2, 0, 1)
         # query_embed = query_embed + b_coordinate
-        
+        query_B = query_B.permute(1, 0, 2)
+        query_embed = query_embed + query_B
+
+
         tgt = torch.zeros_like(query_embed)
         memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
         hs = self.decoder(tgt, memory, memory_key_padding_mask=mask,
@@ -286,7 +289,7 @@ def _get_clones(module, N):
     return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
 
 
-def build_transformer(args):
+def build_transformer_BEV(args):
     return Transformer(
         d_model=args.hidden_dim,
         dropout=args.dropout,
