@@ -205,8 +205,9 @@ class SetCriterion(nn.Module):
         idx = self._get_src_permutation_idx(indices)
         src_bev = outputs['pred_bev'][idx].squeeze()
         target_bev = torch.cat([t['bev'][i] for t, (_, i) in zip(targets, indices)])
-        loss = F.mse_loss(src_bev, target_bev)
-        losses = {'loss_bev' : loss}
+        loss = F.l1_loss(src_bev, target_bev, reduction='none')
+        losses = {}
+        losses['loss_center'] = loss.sum() / num_boxes
         return losses
 
     def loss_dims(self, outputs, targets, indices, num_boxes):
