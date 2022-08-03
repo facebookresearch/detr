@@ -207,7 +207,7 @@ class SetCriterion(nn.Module):
         target_bev = torch.cat([t['bev'][i] for t, (_, i) in zip(targets, indices)])
         loss = F.l1_loss(src_bev, target_bev, reduction='none')
         losses = {}
-        losses['loss_center'] = loss.sum() / num_boxes
+        losses['loss_bev'] = loss.sum() / num_boxes
         return losses
 
     def loss_dims(self, outputs, targets, indices, num_boxes):
