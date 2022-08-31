@@ -90,5 +90,5 @@ def build_position_encoding(args):
 
 
 @torch.fx.wrap
-def torch_arange(x, dtype, device):
+def torch_arange(x: int, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
     return torch.arange(x, dtype=dtype, device=device)
