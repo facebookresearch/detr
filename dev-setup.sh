@@ -5,4 +5,4 @@ conda env create -f conda.yml
     source ~/miniconda-mio/etc/profile.d/conda.sh
 }
 conda activate cv-detr
-pip install -e .
+pip install -r requirements.txt
