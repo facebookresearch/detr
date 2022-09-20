@@ -45,7 +45,6 @@ class NautilusDataset(torch.utils.data.Dataset):
             
         if self._is_train:
             return T.Compose([
-                T.RandomHorizontalFlip(),
                 T.Resize((self._input_size[0], self._input_size[1])),
                 normalize,
             ])
@@ -103,8 +102,3 @@ def build(image_set, args):
     }
     dataset = NautilusDataset(tfrecord_path=PATHS[image_set])
     return dataset
-
-if __name__=='__main__':
-    nd = NautilusDataset(tfrecord_path="/mnt/storage/2021-09-24-its/train.tfrecord")
-    out = nd[0]
-    breakpoint()
