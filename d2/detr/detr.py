@@ -210,7 +210,8 @@ class Detr(nn.Module):
             new_targets.append({"labels": gt_classes, "boxes": gt_boxes})
             if self.mask_on and hasattr(targets_per_image, 'gt_masks'):
                 gt_masks = targets_per_image.gt_masks
-                gt_masks = convert_coco_poly_to_mask(gt_masks.polygons, h, w)
+                if cfg.INPUT.MASK_FORMAT!="BITMASK" or cfg.INPUT.MASK_FORMAT!="bitmask":
+                    gt_masks = convert_coco_poly_to_mask(gt_masks.polygons, h, w)
                 new_targets[-1].update({'masks': gt_masks})
         return new_targets
 
