@@ -242,7 +242,7 @@ class Detr(nn.Module):
             result.pred_boxes.scale(scale_x=image_size[1], scale_y=image_size[0])
             if self.mask_on:
                 mask = F.interpolate(mask_pred[i].unsqueeze(0), size=image_size, mode='bilinear', align_corners=False)
-                mask = mask[0].sigmoid() > 0.5
+                mask = mask[0].sigmoid() > cfg.MODEL.MASK_THRESHOLD
                 B, N, H, W = mask_pred.shape
                 mask = BitMasks(mask.cpu()).crop_and_resize(result.pred_boxes.tensor.cpu(), 32)
                 result.pred_masks = mask.unsqueeze(1).to(mask_pred[0].device)
