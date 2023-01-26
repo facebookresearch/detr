@@ -28,6 +28,7 @@ setup(
     ],
     # Add here the package's dependencies
     install_requires=[
+        'numpy',
         'cython',
         'pycocotools @ git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI&egg=pycocotools',
         'submitit',
