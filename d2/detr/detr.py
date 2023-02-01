@@ -79,6 +79,7 @@ class Detr(nn.Module):
 
         self.num_classes = cfg.MODEL.DETR.NUM_CLASSES
         self.mask_on = cfg.MODEL.MASK_ON
+        self.input_format = cfg.INPUT.MASK_FORMAT
         hidden_dim = cfg.MODEL.DETR.HIDDEN_DIM
         num_queries = cfg.MODEL.DETR.NUM_OBJECT_QUERIES
         # Transformer parameters:
@@ -210,7 +211,7 @@ class Detr(nn.Module):
             new_targets.append({"labels": gt_classes, "boxes": gt_boxes})
             if self.mask_on and hasattr(targets_per_image, 'gt_masks'):
                 gt_masks = targets_per_image.gt_masks
-                if cfg.INPUT.MASK_FORMAT != "BITMASK" or cfg.INPUT.MASK_FORMAT != "bitmask":
+                if self.input_format != "BITMASK" or self.input_format != "bitmask":
                     gt_masks = convert_coco_poly_to_mask(gt_masks.polygons, h, w)
                 new_targets[-1].update({'masks': gt_masks})
         return new_targets
