@@ -24,6 +24,7 @@ Additionnally, we provide a Detectron2 wrapper in the d2/ folder. See the readme
 
 For details see [End-to-End Object Detection with Transformers](https://ai.facebook.com/research/publications/end-to-end-object-detection-with-transformers) by Nicolas Carion, Francisco Massa, Gabriel Synnaeve, Nicolas Usunier, Alexander Kirillov, and Sergey Zagoruyko.
 
+See our [blog post](https://ai.facebook.com/blog/end-to-end-object-detection-with-transformers/) to learn more about end to end object detection with transformers.
 # Model Zoo
 We provide baseline DETR and DETR-DC5 models, and plan to include more in future.
 AP is computed on COCO 2017 val5k, and inference time is over the first 100 val5k COCO images,
