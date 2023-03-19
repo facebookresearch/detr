@@ -5,6 +5,7 @@ import json
 import random
 import time
 from pathlib import Path
+import os
 
 import numpy as np
 import torch
@@ -84,7 +85,7 @@ def get_args_parser():
     parser.add_argument('--coco_panoptic_path', type=str)
     parser.add_argument('--remove_difficult', action='store_true')
 
-    parser.add_argument('--output_dir', default='',
+    parser.add_argument('--output_dir', default='checkpoint',
                         help='path where to save, empty for no saving')
     parser.add_argument('--device', default='cuda',
                         help='device to use for training / testing')
@@ -93,7 +94,7 @@ def get_args_parser():
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
                         help='start epoch')
     parser.add_argument('--eval', action='store_true')
-    parser.add_argument('--num_workers', default=2, type=int)
+    parser.add_argument('--num_workers', default=8, type=int)
 
     # distributed training parameters
     parser.add_argument('--world_size', default=1, type=int,
@@ -139,24 +140,32 @@ def main(args):
                                   weight_decay=args.weight_decay)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop)
 
-    dataset_train = build_dataset(image_set='train', args=args)
-    dataset_val = build_dataset(image_set='val', args=args)
+    if not os.path.exists('datasets/dataloaders.pt'):
+        dataset_train = build_dataset(image_set='train', args=args)
+        dataset_val = build_dataset(image_set='val', args=args)
 
-    if args.distributed:
-        sampler_train = DistributedSampler(dataset_train)
-        sampler_val = DistributedSampler(dataset_val, shuffle=False)
+        if args.distributed:
+            sampler_train = DistributedSampler(dataset_train)
+            sampler_val = DistributedSampler(dataset_val, shuffle=False)
+        else:
+            sampler_train = torch.utils.data.RandomSampler(dataset_train)
+            sampler_val = torch.utils.data.SequentialSampler(dataset_val)
+
+        data_to_save = {'train_dataset':dataset_train,'train_sampler':sampler_train,'val_dataset':dataset_val,"val_sampler":sampler_val}
+        torch.save(data_to_save,'datasets/dataloaders.pt')
     else:
-        sampler_train = torch.utils.data.RandomSampler(dataset_train)
-        sampler_val = torch.utils.data.SequentialSampler(dataset_val)
-
-    batch_sampler_train = torch.utils.data.BatchSampler(
-        sampler_train, args.batch_size, drop_last=True)
-
+        loaded = torch.load('datasets/dataloaders.pt')
+        dataset_train = loaded['train_dataset']
+        dataset_val = loaded['val_dataset']
+        sampler_train = loaded['train_sampler']
+        sampler_val = loaded['val_sampler']    
+    
+    batch_sampler_train = torch.utils.data.BatchSampler(sampler_train, args.batch_size, drop_last=True)
     data_loader_train = DataLoader(dataset_train, batch_sampler=batch_sampler_train,
-                                   collate_fn=utils.collate_fn, num_workers=args.num_workers)
+                                collate_fn=utils.collate_fn, num_workers=args.num_workers)
     data_loader_val = DataLoader(dataset_val, args.batch_size, sampler=sampler_val,
-                                 drop_last=False, collate_fn=utils.collate_fn, num_workers=args.num_workers)
-
+                                drop_last=False, collate_fn=utils.collate_fn, num_workers=args.num_workers)
+    
     if args.dataset_file == "coco_panoptic":
         # We also evaluate AP during panoptic training, on original coco DS
         coco_val = datasets.coco.build("val", args)

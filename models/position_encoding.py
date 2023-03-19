@@ -16,7 +16,7 @@ class PositionEmbeddingSine(nn.Module):
     """
     def __init__(self, num_pos_feats=64, temperature=10000, normalize=False, scale=None):
         super().__init__()
-        self.num_pos_feats = num_pos_feats
+        self.num_pos_feats = num_pos_feats  # this comes from 
         self.temperature = temperature
         self.normalize = normalize
         if scale is not None and normalize is False:
@@ -38,7 +38,7 @@ class PositionEmbeddingSine(nn.Module):
             x_embed = x_embed / (x_embed[:, :, -1:] + eps) * self.scale
 
         dim_t = torch.arange(self.num_pos_feats, dtype=torch.float32, device=x.device)
-        dim_t = self.temperature ** (2 * (dim_t // 2) / self.num_pos_feats)
+        dim_t = self.temperature ** (2 * (dim_t // 2) / self.num_pos_feats) # this is the base frequency sin(pos/(10000^(2*i/ 0.5*arg.hidden_dim))). This is a constant, it doesn't change 
 
         pos_x = x_embed[:, :, :, None] / dim_t
         pos_y = y_embed[:, :, :, None] / dim_t

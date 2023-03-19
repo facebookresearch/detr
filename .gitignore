@@ -15,3 +15,5 @@ experiment-*
 .mypy_cache/*
 not_tracked_dir/
 .vscode
+*.pt
+checkpoint/log.txt
