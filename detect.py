@@ -25,6 +25,7 @@ COLORS = [[0.000, 0.447, 0.741], [0.850, 0.325, 0.098], [0.929, 0.694, 0.125],
           [0.494, 0.184, 0.556], [0.466, 0.674, 0.188], [0.301, 0.745, 0.933]]
 
 def plot_results(pil_img, prob, boxes):
+    global model
     plt.figure(figsize=(16,10))
     plt.imshow(pil_img)
     ax = plt.gca()
@@ -39,27 +40,8 @@ def plot_results(pil_img, prob, boxes):
     plt.axis('off')
     plt.savefig("last_detected.jpg")
 
-
-
-
-
-if __name__ == "__main__":
-    import argparse
-    from pathlib import Path
-    SAMPLE_URL = 'http://images.cocodataset.org/val2017/000000039769.jpg'
-    parser = argparse.ArgumentParser(description="DETR detection")
-    group = parser.add_argument_group('input_type')
-    group.add_argument("--path", help="path to images or video")
-    group.add_argument("--url", help="URL to image")
-
-    args = parser.parse_args()
-    if args.url:
-        url = 'http://images.cocodataset.org/val2017/000000039769.jpg'
-        im = Image.open(requests.get(url, stream=True).raw)
-    elif args.path:
-        path = Path(args.path)
-        im = Image.open(str(path))
-
+def detect_image(im):
+    global model
     feature_extractor = DetrFeatureExtractor.from_pretrained("facebook/detr-resnet-50")
 
     encoding = feature_extractor(im, return_tensors="pt")
@@ -90,7 +72,7 @@ if __name__ == "__main__":
     plot_results(im, probas[keep], bboxes_scaled)
 
     """## Visualizing attention weights of the last decoder layer
-    
+
     Here we visualize the cross-attention weights of the last decoder layer. This corresponds to visualizing, for each detected object, which part of the image the model was looking at to predict this specific bounding box and class.
     """
 
@@ -118,3 +100,24 @@ if __name__ == "__main__":
 
     """Now let's visualize them:"""
 
+
+if __name__ == "__main__":
+    import argparse
+    from pathlib import Path
+    SAMPLE_URL = 'http://images.cocodataset.org/val2017/000000039769.jpg'
+    parser = argparse.ArgumentParser(description="DETR detection")
+    group = parser.add_argument_group('input_type')
+    group.add_argument("--path", help="path to images or video")
+    group.add_argument("--url", help="URL to image")
+
+    args = parser.parse_args()
+    if args.url:
+        url = 'http://images.cocodataset.org/val2017/000000039769.jpg'
+        im = Image.open(requests.get(url, stream=True).raw)
+    elif args.path:
+        path = Path(args.path)
+        im = Image.open(str(path))
+
+
+
+    detect_image(im)
