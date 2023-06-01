@@ -44,8 +44,21 @@ def plot_results(pil_img, prob, boxes):
 
 
 if __name__ == "__main__":
-    url = 'http://images.cocodataset.org/val2017/000000039769.jpg'
-    im = Image.open(requests.get(url, stream=True).raw)
+    import argparse
+    from pathlib import Path
+    SAMPLE_URL = 'http://images.cocodataset.org/val2017/000000039769.jpg'
+    parser = argparse.ArgumentParser(description="DETR detection")
+    group = parser.add_argument_group('input_type')
+    group.add_argument("--path", help="path to images or video")
+    group.add_argument("--url", help="URL to image")
+
+    args = parser.parse_args()
+    if args.url:
+        url = 'http://images.cocodataset.org/val2017/000000039769.jpg'
+        im = Image.open(requests.get(url, stream=True).raw)
+    elif args.path:
+        path = Path(args.path)
+        im = Image.open(str(path))
 
     feature_extractor = DetrFeatureExtractor.from_pretrained("facebook/detr-resnet-50")
 
