@@ -71,35 +71,6 @@ def detect_image(im):
 
     plot_results(im, probas[keep], bboxes_scaled)
 
-    """## Visualizing attention weights of the last decoder layer
-
-    Here we visualize the cross-attention weights of the last decoder layer. This corresponds to visualizing, for each detected object, which part of the image the model was looking at to predict this specific bounding box and class.
-    """
-
-    # use lists to store the outputs via up-values
-    conv_features = []
-
-    hooks = [
-        model.model.backbone.conv_encoder.register_forward_hook(
-            lambda self, input, output: conv_features.append(output)
-        ),
-    ]
-
-    # propagate through the model
-    outputs = model(**encoding, output_attentions=True)
-
-    for hook in hooks:
-        hook.remove()
-
-    # don't need the list anymore
-    conv_features = conv_features[0]
-    # get cross-attention weights of last decoder layer - which is of shape (batch_size, num_heads, num_queries, width*height)
-    dec_attn_weights = outputs.cross_attentions[-1]
-    # average them over the 8 heads and detach from graph
-    dec_attn_weights = torch.mean(dec_attn_weights, dim=1).detach()
-
-    """Now let's visualize them:"""
-
 
 if __name__ == "__main__":
     import argparse
@@ -117,7 +88,5 @@ if __name__ == "__main__":
     elif args.path:
         path = Path(args.path)
         im = Image.open(str(path))
-
-
 
     detect_image(im)
