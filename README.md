@@ -1,3 +1,18 @@
+## Change in this repo
+
+The code is almost untouched. We added `.toml` file to be able to install the package in case you need to install it.
+
+Run in Pytorch 1.8 environnement, Python 3.8.8.
+
+Do not forget to run the following lines to install the requirements of this package before-hand :
+```bash
+pip install --no-cache-dir Cython
+pip install --no-cache-dir -r https://raw.githubusercontent.com/facebookresearch/detr/main/requirements.txt
+```
+We added the (notebook file)[./detr_demo.ipynb] to verify the model is working on actual data. No trained have been done on a COCO dataset currently. `test_all.py` is passing.
+
+Scripts are available from `python -m detr.scripts.*`.
+
 **DE⫶TR**: End-to-End Object Detection with Transformers
 ========
 
@@ -8,7 +23,7 @@ We replace the full complex hand-crafted object detection pipeline with a Transf
 
 ![DETR](.github/DETR.png)
 
-**What it is**. Unlike traditional computer vision techniques, DETR approaches object detection as a direct set prediction problem. It consists of a set-based global loss, which forces unique predictions via bipartite matching, and a Transformer encoder-decoder architecture. 
+**What it is**. Unlike traditional computer vision techniques, DETR approaches object detection as a direct set prediction problem. It consists of a set-based global loss, which forces unique predictions via bipartite matching, and a Transformer encoder-decoder architecture.
 Given a fixed small set of learned object queries, DETR reasons about the relations of the objects and the global image context to directly output the final set of predictions in parallel. Due to this parallel nature, DETR is very fast and efficient.
 
 **About the code**. We believe that object detection should not be more difficult than classification,
@@ -193,7 +208,7 @@ path/to/coco/
 ## Training
 To train baseline DETR on a single node with 8 gpus for 300 epochs run:
 ```
-python -m torch.distributed.launch --nproc_per_node=8 --use_env main.py --coco_path /path/to/coco 
+python -m torch.distributed.launch --nproc_per_node=8 --use_env main.py --coco_path /path/to/coco
 ```
 A single epoch takes 28 minutes, so 300 epoch training
 takes around 6 days on a single machine with 8 V100 cards.

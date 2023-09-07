@@ -7,3 +7,4 @@ git+https://github.com/cocodataset/panopticapi.git#egg=panopticapi
 scipy
 onnx
 onnxruntime
+git+https://github.com/facebookresearch/detectron2.git

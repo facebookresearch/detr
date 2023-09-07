@@ -7,8 +7,9 @@ import os
 import uuid
 from pathlib import Path
 
-import main as detection
 import submitit
+
+import detr.scripts.main as detection
 
 
 def parse_args():

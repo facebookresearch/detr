@@ -10,11 +10,11 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, DistributedSampler
 
-import datasets
-import util.misc as utils
-from datasets import build_dataset, get_coco_api_from_dataset
-from engine import evaluate, train_one_epoch
-from models import build_model
+from detr import datasets
+import detr.util.misc as utils
+from detr.datasets import build_dataset, get_coco_api_from_dataset
+from detr.scripts.engine import evaluate, train_one_epoch
+from detr.models import build_model
 
 
 def get_args_parser():

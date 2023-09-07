@@ -2,7 +2,7 @@
 import torch.utils.data
 import torchvision
 
-from .coco import build as build_coco
+from detr.datasets.coco import build as build_coco
 
 
 def get_coco_api_from_dataset(dataset):
