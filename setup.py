@@ -30,7 +30,7 @@ setup(
     install_requires=[
         'numpy',
         'cython',
-        'pycocotools @ git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI&egg=pycocotools',
+        'pycocotools',
         'submitit',
         'torch>=1.5.0',
         'torchvision>=0.6.0',
