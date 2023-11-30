@@ -10,7 +10,7 @@ from models.transformer import Transformer
 dependencies = ["torch", "torchvision"]
 
 
-def _make_detr(backbone_name: str, dilation=False, num_classes=91, mask=False):
+def _make_detr(backbone_name: str, dilation=False, num_classes=1, mask=False):
     hidden_dim = 256
     backbone = Backbone(backbone_name, train_backbone=True, return_interm_layers=mask, dilation=dilation)
     pos_enc = PositionEmbeddingSine(hidden_dim // 2, normalize=True)
@@ -23,7 +23,7 @@ def _make_detr(backbone_name: str, dilation=False, num_classes=91, mask=False):
     return detr
 
 
-def detr_resnet50(pretrained=False, num_classes=91, return_postprocessor=False):
+def detr_resnet50(pretrained=False, num_classes=1, return_postprocessor=False):
     """
     DETR R50 with 6 encoder and 6 decoder layers.
 
@@ -40,7 +40,7 @@ def detr_resnet50(pretrained=False, num_classes=91, return_postprocessor=False):
     return model
 
 
-def detr_resnet50_dc5(pretrained=False, num_classes=91, return_postprocessor=False):
+def detr_resnet50_dc5(pretrained=False, num_classes=1, return_postprocessor=False):
     """
     DETR-DC5 R50 with 6 encoder and 6 decoder layers.
 
@@ -59,7 +59,7 @@ def detr_resnet50_dc5(pretrained=False, num_classes=91, return_postprocessor=Fal
     return model
 
 
-def detr_resnet101(pretrained=False, num_classes=91, return_postprocessor=False):
+def detr_resnet101(pretrained=False, num_classes=1, return_postprocessor=False):
     """
     DETR-DC5 R101 with 6 encoder and 6 decoder layers.
 
@@ -76,7 +76,7 @@ def detr_resnet101(pretrained=False, num_classes=91, return_postprocessor=False)
     return model
 
 
-def detr_resnet101_dc5(pretrained=False, num_classes=91, return_postprocessor=False):
+def detr_resnet101_dc5(pretrained=False, num_classes=1, return_postprocessor=False):
     """
     DETR-DC5 R101 with 6 encoder and 6 decoder layers.
 

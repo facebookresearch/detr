@@ -32,7 +32,7 @@ class Tester(unittest.TestCase):
         return [(i.tolist(), j.tolist()) for i, j in indices]
 
     def test_hungarian(self):
-        n_queries, n_targets, n_classes = 100, 15, 91
+        n_queries, n_targets, n_classes = 100, 15, 1
         logits = torch.rand(1, n_queries, n_classes + 1)
         boxes = torch.rand(1, n_queries, 4)
         tgt_labels = torch.randint(high=n_classes, size=(n_targets,))
