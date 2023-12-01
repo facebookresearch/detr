@@ -111,7 +111,7 @@ def detect_set(model, transform):
 
     for img_path in img_set:
         print(img_path, ":", end=" ")
-        im = Image.open(img_path)
+        im = Image.open(img_path).convert("RGB")
         start = time.time()
         scores, boxes = detect(im, model, transform)
         stop = time.time()
