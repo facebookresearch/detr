@@ -61,7 +61,7 @@ def detect(im, model, transform):
     # demo model only support by default images with aspect ratio between 0.5 and 2
     # if you want to use images with an aspect ratio outside this range
     # rescale your image so that the maximum size is at most 1333 for best results
-    if (img.size[0] > 1600 or img.size[1] > 1600):
+    if (img.shape[-2] > 1600 or img.shape[-1] > 1600):
         print("Image size too large", end=" ")
         return None, None
     assert img.shape[-2] <= 1600 and img.shape[-1] <= 1600, 'demo model only supports images up to 1600 pixels on each side'
