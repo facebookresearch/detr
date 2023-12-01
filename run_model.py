@@ -63,7 +63,7 @@ def detect(im, model, transform):
     # rescale your image so that the maximum size is at most 1333 for best results
     if (img.shape[-2] > 1600 or img.shape[-1] > 1600):
         print("Image size too large", end=" ")
-        return None, None
+        return [], []
     assert img.shape[-2] <= 1600 and img.shape[-1] <= 1600, 'demo model only supports images up to 1600 pixels on each side'
 
     # propagate through the model
