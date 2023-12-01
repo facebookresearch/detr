@@ -14,6 +14,8 @@ from models.position_encoding import PositionEmbeddingSine
 from models.segmentation import DETRsegm, PostProcessPanoptic
 from models.transformer import Transformer
 
+import hubconf
+
 def _make_detr(backbone_name: str, dilation=False, num_classes=91, mask=False):
     hidden_dim = 256
     backbone = Backbone(backbone_name, train_backbone=True, return_interm_layers=mask, dilation=dilation)
@@ -27,12 +29,7 @@ def _make_detr(backbone_name: str, dilation=False, num_classes=91, mask=False):
     return detr
 
 
-def detr_resnet50(pretrained=False, num_classes=91, return_postprocessor=False):
-    """
-    DETR R50 with 6 encoder and 6 decoder layers.
-
-    Achieves 42/62.4 AP/AP50 on COCO val5k.
-    """
+def detr_custom(pretrained=False, num_classes=91, return_postprocessor=False):
     model = _make_detr("resnet50", dilation=False, num_classes=num_classes)
     if pretrained:
         checkpoint = torch.hub.load_state_dict_from_url(
@@ -160,7 +157,8 @@ if __name__ == "__main__":
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
 
-    detr = detr_resnet50(pretrained=True, num_classes=1, return_postprocessor=False).eval()
+    # detr = detr_custom(pretrained=True, num_classes=1, return_postprocessor=False).eval()
+    detr = hubconf.detr_resnet101_dc5(pretrained=True).eval()
 
     # url = 'http://images.cocodataset.org/train2017/000000000536.jpg'
     # im = Image.open(requests.get(url, stream=True).raw)
@@ -177,4 +175,4 @@ if __name__ == "__main__":
     results, detected = detect_set(detr, transform)
     print("Detected:", detected)
 
-    # detect_img("http://images.cocodataset.org/val2017/000000148662.jpg", detr, transform)
+    # detect_img("http://images.cocodataset.org/train2017/000000478755.jpg", detr, transform)
