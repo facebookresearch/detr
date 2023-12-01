@@ -35,6 +35,7 @@ def detr_custom(pretrained=False, num_classes=91, return_postprocessor=False):
         checkpoint = torch.hub.load_state_dict_from_url(
             url="https://huggingface.co/nhphucqt/detr_person/resolve/main/checkpoint_002.pth?download=true", map_location="cpu", check_hash=True
             # url="https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth", map_location="cpu", check_hash=True
+            # url="https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetr_r18vd_dec3_6x_coco_from_paddle.pth", map_location="cpu", check_hash=True
         )
         model.load_state_dict(checkpoint["model"])
     if return_postprocessor:
@@ -171,6 +172,6 @@ if __name__ == "__main__":
     # plot_results(im, scores, boxes)
 
     detect_set(detr, transform)
-    print("Detected:", detected)
+    # print("Detected:", detected)
 
-    # detect_img("http://images.cocodataset.org/train2017/000000478755.jpg", detr, transform)
+    # detect_img("http://images.cocodataset.org/val2017/000000002299.jpg", detr, transform)
