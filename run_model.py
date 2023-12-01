@@ -1,5 +1,6 @@
 import torch
 import glob
+import sys
 
 import time
 from PIL import Image
@@ -110,8 +111,8 @@ def detect_img(img_path, model, transform):
     print(f"Time: {stop - start}s")
     plot_results(im, scores, boxes)
 
-def detect_set(model, transform):
-    dir_path = "/content/coco2017/val2017/"
+def detect_set(model, transform, path_name):
+    dir_path = path_name
 
     img_set = glob.glob(dir_path + "*.jpg")
     img_set.sort()
@@ -183,8 +184,8 @@ if __name__ == "__main__":
 
     # print(f"Time: {stop - start}s")
     # plot_results(im, scores, boxes)
-
-    detect_set(detr, transform)
+    path_name = sys.argv[1]
+    detect_set(detr, transform, path_name)
     # print("Detected:", detected)
 
     # detect_img("http://images.cocodataset.org/val2017/000000002299.jpg", detr, transform)
