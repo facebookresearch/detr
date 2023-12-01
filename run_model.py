@@ -33,7 +33,7 @@ def detr_custom(pretrained=False, num_classes=91, return_postprocessor=False):
     model = _make_detr("resnet50", dilation=False, num_classes=num_classes)
     if pretrained:
         checkpoint = torch.hub.load_state_dict_from_url(
-            url="https://huggingface.co/nhphucqt/detr_person/resolve/main/checkpoint_002.pth?download=true", map_location="cpu", check_hash=True
+            url="https://huggingface.co/nhphucqt/detr_person/resolve/main/checkpoint_003.pth?download=true", map_location="cpu", check_hash=True
             # url="https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth", map_location="cpu", check_hash=True
             # url="https://github.com/lyuwenyu/storage/releases/download/v0.1/rtdetr_r18vd_dec3_6x_coco_from_paddle.pth", map_location="cpu", check_hash=True
         )
@@ -63,8 +63,7 @@ def detect(im, model, transform):
     # if you want to use images with an aspect ratio outside this range
     # rescale your image so that the maximum size is at most 1333 for best results
     if (img.shape[-2] > 1600 or img.shape[-1] > 1600):
-        print("Image size too large", end=" ")
-        return [], []
+        return None, None
     assert img.shape[-2] <= 1600 and img.shape[-1] <= 1600, 'demo model only supports images up to 1600 pixels on each side'
 
     # propagate through the model
@@ -104,6 +103,10 @@ def detect_img(img_path, model, transform):
     scores, boxes = detect(im, model, transform)
     stop = time.time()
 
+    if (scores is None):
+        print("Image size too large")
+        return
+
     print(f"Time: {stop - start}s")
     plot_results(im, scores, boxes)
 
@@ -113,6 +116,9 @@ def detect_set(model, transform):
     img_set = glob.glob(dir_path + "*.jpg")
     img_set.sort()
 
+    sum_time = 0
+    cnt = 0
+
     for img_path in img_set:
         print(img_path, ":", end=" ")
         im = Image.open(img_path).convert("RGB")
@@ -121,7 +127,14 @@ def detect_set(model, transform):
         stop = time.time()
         im.close()
 
+        if (scores is None):
+            print("Image size too large")
+            continue
+
         print(len(boxes), ", Time:", stop - start, "s")
+        sum_time += stop - start
+        cnt += 1
+        print("Average time", cnt, ":", sum_time / cnt, "s")
     # mean-std normalize the input image (batch-size: 1)
 
 if __name__ == "__main__":
