@@ -92,7 +92,7 @@ def plot_results(pil_img, prob, boxes):
 
 def detect_img(img_path, model, transform):
     url = img_path
-    im = Image.open(requests.get(url, stream=True).raw)
+    im = Image.open(requests.get(url, stream=True).raw).convert("RGB")
 
     print("Image:", im.size)
 
