@@ -114,7 +114,9 @@ def detect_set(model, transform):
 
     for img_path in glob.glob(dir_path + "*.jpg"):
         im = Image.open(img_path)
+        start = time.time()
         scores, boxes = detect(im, model, transform)
+        stop = time.time()
         bboxes_scaled = boxes.tolist()
 
         print(img_path, ":", len(bboxes_scaled), ", Time:", stop - start, "s")
