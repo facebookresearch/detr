@@ -112,6 +112,8 @@ if __name__ == "__main__":
     url = 'http://images.cocodataset.org/val2017/000000004134.jpg'
     im = Image.open(requests.get(url, stream=True).raw)
 
+    print("Image:", im.size)
+
     scores, boxes = detect(im, detr, transform)
 
     plot_results(im, scores, boxes)
