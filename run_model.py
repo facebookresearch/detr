@@ -107,7 +107,7 @@ def detect_img(img_path, model, transform):
     plot_results(im, scores, boxes)
 
 def detect_set(model, transform):
-    dir_path = "/content/coco2017/val2017/"
+    dir_path = "/content/coco2017/train2017/"
 
     results = []
     detected = []
