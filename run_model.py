@@ -112,6 +112,9 @@ def detect_set(model, transform):
     for img_path in img_set:
         print(img_path, ":", end=" ")
         im = Image.open(img_path).convert("RGB")
+        if (im.size[0] > 1600 or im.size[1] > 1600):
+            print("Image size too large")
+            continue
         start = time.time()
         scores, boxes = detect(im, model, transform)
         stop = time.time()
