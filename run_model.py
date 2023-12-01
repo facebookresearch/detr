@@ -122,7 +122,7 @@ def detect_set(model, transform):
         print(img_path, ":", len(bboxes_scaled), ", Time:", stop - start, "s")
 
         results.append((scores, bboxes_scaled))
-        if bboxes_scaled.tolist() != []:
+        if bboxes_scaled != []:
             detected.append((img_path, bboxes_scaled))
     # mean-std normalize the input image (batch-size: 1)
     
