@@ -105,12 +105,12 @@ def detect_img(img_path, model, transform):
 
 def detect_set(model, transform):
     dir_path = "/content/coco2017/train2017/"
-    print(img_path, ":", end=" ")
 
     img_set = glob.glob(dir_path + "*.jpg")
     img_set.sort()
 
     for img_path in img_set:
+        print(img_path, ":", end=" ")
         im = Image.open(img_path)
         start = time.time()
         scores, boxes = detect(im, model, transform)
