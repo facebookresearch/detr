@@ -185,6 +185,7 @@ if __name__ == "__main__":
     # print(f"Time: {stop - start}s")
     # plot_results(im, scores, boxes)
     path_name = sys.argv[1]
+    print("Path:", path_name)
     detect_set(detr, transform, path_name)
     # print("Detected:", detected)
 
