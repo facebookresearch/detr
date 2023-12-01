@@ -118,7 +118,9 @@ def detect_set(model, transform):
         img = transform(im).unsqueeze(0)
 
         # propagate through the model
+        start = time.time()
         outputs = model(img)
+        stop = time.time()
 
         # keep only predictions with 0.7+ confidence
         probas = outputs['pred_logits'].softmax(-1)[0, :, :-1]
@@ -127,8 +129,7 @@ def detect_set(model, transform):
         bboxes_scaled = rescale_bboxes(outputs['pred_boxes'][0], im.size)
         # return probas, bboxes_scaled
 
-        print("prob:", probas)
-        print("boxes:", bboxes_scaled.tolist())
+        print(img_path, ":", len(probas), ", Time:", stop - start, "s")
 
         results.append((probas, bboxes_scaled.tolist()))
         if bboxes_scaled.tolist() != []:
@@ -183,6 +184,7 @@ if __name__ == "__main__":
     # print(f"Time: {stop - start}s")
     # plot_results(im, scores, boxes)
 
-    detect_set(detr, transform)
+    results, detected = detect_set(detr, transform)
+    print("Detected:", detected)
 
     # detect_img("http://images.cocodataset.org/train2017/000000000536.jpg", detr, transform)
