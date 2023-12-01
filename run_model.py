@@ -1,4 +1,5 @@
 import torch
+import glob
 
 import time
 from PIL import Image
@@ -91,7 +92,50 @@ def plot_results(pil_img, prob, boxes):
                 bbox=dict(facecolor='yellow', alpha=0.5))
     plt.axis('off')
     plt.show()
+
+def detect_img(img_path, model, transform):
+    url = img_path
+    im = Image.open(requests.get(url, stream=True).raw)
+
+    print("Image:", im.size)
+
+    start = time.time()
+    scores, boxes = detect(im, model, transform)
+    stop = time.time()
+
+    print(f"Time: {stop - start}s")
+    plot_results(im, scores, boxes)
+
+def detect_set(model, transform):
+    dir_path = "/content/coco2017/val2017/"
+
+    results = []
+    detected = []
+
+    for img_path in glob.glob(dir_path + "*.jpg"):
+        im = Image.open(img_path)
+        # mean-std normalize the input image (batch-size: 1)
+        img = transform(im).unsqueeze(0)
+
+        # propagate through the model
+        outputs = model(img)
+
+        # keep only predictions with 0.7+ confidence
+        probas = outputs['pred_logits'].softmax(-1)[0, :, :-1]
+
+        # convert boxes from [0; 1] to image scales
+        bboxes_scaled = rescale_bboxes(outputs['pred_boxes'][0], im.size)
+        # return probas, bboxes_scaled
+
+        print("prob:", probas)
+        print("boxes:", bboxes_scaled.tolist())
+
+        results.append((probas, bboxes_scaled.tolist()))
+        if bboxes_scaled.tolist() != []:
+            detected.append((img_path, bboxes_scaled.tolist()))
+    # mean-std normalize the input image (batch-size: 1)
     
+    return results, detected
 
 if __name__ == "__main__":
     # COCO classes
@@ -127,14 +171,18 @@ if __name__ == "__main__":
 
     detr = detr_resnet50(pretrained=True, num_classes=1, return_postprocessor=False).eval()
 
-    url = 'http://images.cocodataset.org/train2017/000000000241.jpg'
-    im = Image.open(requests.get(url, stream=True).raw)
+    # url = 'http://images.cocodataset.org/train2017/000000000536.jpg'
+    # im = Image.open(requests.get(url, stream=True).raw)
 
-    print("Image:", im.size)
+    # print("Image:", im.size)
 
-    start = time.time()
-    scores, boxes = detect(im, detr, transform)
-    stop = time.time()
+    # start = time.time()
+    # scores, boxes = detect(im, detr, transform)
+    # stop = time.time()
 
-    print(f"Time: {stop - start}s")
-    plot_results(im, scores, boxes)
+    # print(f"Time: {stop - start}s")
+    # plot_results(im, scores, boxes)
+
+    detect_set(detr, transform)
+
+    # detect_img("http://images.cocodataset.org/train2017/000000000536.jpg", detr, transform)
