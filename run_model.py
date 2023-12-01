@@ -114,26 +114,14 @@ def detect_set(model, transform):
 
     for img_path in glob.glob(dir_path + "*.jpg"):
         im = Image.open(img_path)
-        # mean-std normalize the input image (batch-size: 1)
-        img = transform(im).unsqueeze(0)
+        scores, boxes = detect(im, model, transform)
+        bboxes_scaled = boxes.tolist()
 
-        # propagate through the model
-        start = time.time()
-        outputs = model(img)
-        stop = time.time()
+        print(img_path, ":", len(bboxes_scaled), ", Time:", stop - start, "s")
 
-        # keep only predictions with 0.7+ confidence
-        probas = outputs['pred_logits'].softmax(-1)[0, :, :-1]
-
-        # convert boxes from [0; 1] to image scales
-        bboxes_scaled = rescale_bboxes(outputs['pred_boxes'][0], im.size)
-        # return probas, bboxes_scaled
-
-        print(img_path, ":", len(probas), ", Time:", stop - start, "s")
-
-        results.append((probas, bboxes_scaled.tolist()))
+        results.append((probas, bboxes_scaled))
         if bboxes_scaled.tolist() != []:
-            detected.append((img_path, bboxes_scaled.tolist()))
+            detected.append((img_path, bboxes_scaled))
     # mean-std normalize the input image (batch-size: 1)
     
     return results, detected
@@ -187,4 +175,4 @@ if __name__ == "__main__":
     results, detected = detect_set(detr, transform)
     print("Detected:", detected)
 
-    # detect_img("http://images.cocodataset.org/train2017/000000000536.jpg", detr, transform)
+    # detect_img("http://images.cocodataset.org/val2017/000000148662.jpg", detr, transform)
