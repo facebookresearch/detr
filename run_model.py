@@ -170,8 +170,17 @@ if __name__ == "__main__":
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
 
-    detr = detr_custom(pretrained=True, num_classes=1, return_postprocessor=False).eval()
+    path_name = sys.argv[1]
+    model_name = sys.argv[2]
+    print("Path:", path_name)
+    print("Model:", model_name)
+
+    # detr = detr_custom(pretrained=True, num_classes=1, return_postprocessor=False).eval()
     # detr = hubconf.detr_resnet101_dc5(pretrained=True).eval()
+    if (model_name == "detr_resnet50_dc5"):
+        detr = hubconf.detr_resnet50(pretrained=True).eval()
+    elif (model_name == "detr_custom"):
+        detr = detr_custom(pretrained=True, num_classes=1, return_postprocessor=False).eval()
 
     # url = 'http://images.cocodataset.org/train2017/000000000536.jpg'
     # im = Image.open(requests.get(url, stream=True).raw)
@@ -184,8 +193,6 @@ if __name__ == "__main__":
 
     # print(f"Time: {stop - start}s")
     # plot_results(im, scores, boxes)
-    path_name = sys.argv[1]
-    print("Path:", path_name)
     detect_set(detr, transform, path_name)
     # print("Detected:", detected)
 
