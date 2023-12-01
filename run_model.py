@@ -33,7 +33,7 @@ def detr_custom(pretrained=False, num_classes=91, return_postprocessor=False):
     model = _make_detr("resnet50", dilation=False, num_classes=num_classes)
     if pretrained:
         checkpoint = torch.hub.load_state_dict_from_url(
-            url="https://huggingface.co/nhphucqt/detr_person/resolve/main/checkpoint_001.pth?download=true", map_location="cpu", check_hash=True
+            url="https://huggingface.co/nhphucqt/detr_person/resolve/main/checkpoint_002.pth?download=true", map_location="cpu", check_hash=True
             # url="https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth", map_location="cpu", check_hash=True
         )
         model.load_state_dict(checkpoint["model"])
@@ -106,24 +106,16 @@ def detect_img(img_path, model, transform):
 def detect_set(model, transform):
     dir_path = "/content/coco2017/train2017/"
 
-    results = []
-    detected = []
-
     for img_path in glob.glob(dir_path + "*.jpg"):
         im = Image.open(img_path)
         start = time.time()
         scores, boxes = detect(im, model, transform)
         stop = time.time()
         bboxes_scaled = boxes.tolist()
+        im.close()
 
         print(img_path, ":", len(bboxes_scaled), ", Time:", stop - start, "s")
-
-        results.append((scores, bboxes_scaled))
-        if bboxes_scaled != []:
-            detected.append((img_path, bboxes_scaled))
     # mean-std normalize the input image (batch-size: 1)
-    
-    return results, detected
 
 if __name__ == "__main__":
     # COCO classes
@@ -157,8 +149,8 @@ if __name__ == "__main__":
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
 
-    # detr = detr_custom(pretrained=True, num_classes=1, return_postprocessor=False).eval()
-    detr = hubconf.detr_resnet101_dc5(pretrained=True).eval()
+    detr = detr_custom(pretrained=True, num_classes=1, return_postprocessor=False).eval()
+    # detr = hubconf.detr_resnet101_dc5(pretrained=True).eval()
 
     # url = 'http://images.cocodataset.org/train2017/000000000536.jpg'
     # im = Image.open(requests.get(url, stream=True).raw)
@@ -172,7 +164,7 @@ if __name__ == "__main__":
     # print(f"Time: {stop - start}s")
     # plot_results(im, scores, boxes)
 
-    results, detected = detect_set(detr, transform)
+    detect_set(detr, transform)
     print("Detected:", detected)
 
     # detect_img("http://images.cocodataset.org/train2017/000000478755.jpg", detr, transform)
