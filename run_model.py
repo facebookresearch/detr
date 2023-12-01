@@ -1,5 +1,6 @@
 import torch
 
+import time
 from PIL import Image
 import requests
 import matplotlib.pyplot as plt
@@ -12,7 +13,7 @@ from models.position_encoding import PositionEmbeddingSine
 from models.segmentation import DETRsegm, PostProcessPanoptic
 from models.transformer import Transformer
 
-def _make_detr(backbone_name: str, dilation=False, num_classes=1, mask=False):
+def _make_detr(backbone_name: str, dilation=False, num_classes=91, mask=False):
     hidden_dim = 256
     backbone = Backbone(backbone_name, train_backbone=True, return_interm_layers=mask, dilation=dilation)
     pos_enc = PositionEmbeddingSine(hidden_dim // 2, normalize=True)
@@ -25,7 +26,7 @@ def _make_detr(backbone_name: str, dilation=False, num_classes=1, mask=False):
     return detr
 
 
-def detr_resnet50(pretrained=False, num_classes=1, return_postprocessor=False):
+def detr_resnet50(pretrained=False, num_classes=91, return_postprocessor=False):
     """
     DETR R50 with 6 encoder and 6 decoder layers.
 
@@ -34,8 +35,8 @@ def detr_resnet50(pretrained=False, num_classes=1, return_postprocessor=False):
     model = _make_detr("resnet50", dilation=False, num_classes=num_classes)
     if pretrained:
         checkpoint = torch.hub.load_state_dict_from_url(
-            # url="https://huggingface.co/nhphucqt/detr_epoch_001.pth/resolve/main/checkpoint.pth", map_location="cpu", check_hash=True
-            url="https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth", map_location="cpu", check_hash=True
+            url="https://huggingface.co/nhphucqt/detr_person/resolve/main/checkpoint_001.pth?download=true", map_location="cpu", check_hash=True
+            # url="https://dl.fbaipublicfiles.com/detr/detr-r50-e632da11.pth", map_location="cpu", check_hash=True
         )
         model.load_state_dict(checkpoint["model"])
     if return_postprocessor:
@@ -94,8 +95,24 @@ def plot_results(pil_img, prob, boxes):
 
 if __name__ == "__main__":
     # COCO classes
+    # CLASSES = [
+    #    'person'
+    # ]
     CLASSES = [
-       'person'
+        'N/A', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
+        'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'N/A',
+        'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse',
+        'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'N/A', 'backpack',
+        'umbrella', 'N/A', 'N/A', 'handbag', 'tie', 'suitcase', 'frisbee', 'skis',
+        'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove',
+        'skateboard', 'surfboard', 'tennis racket', 'bottle', 'N/A', 'wine glass',
+        'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana', 'apple', 'sandwich',
+        'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut', 'cake',
+        'chair', 'couch', 'potted plant', 'bed', 'N/A', 'dining table', 'N/A',
+        'N/A', 'toilet', 'N/A', 'tv', 'laptop', 'mouse', 'remote', 'keyboard',
+        'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'N/A',
+        'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier',
+        'toothbrush'
     ]
 
     # colors for visualization
@@ -110,11 +127,14 @@ if __name__ == "__main__":
 
     detr = detr_resnet50(pretrained=True, num_classes=1, return_postprocessor=False).eval()
 
-    url = 'http://images.cocodataset.org/val2017/000000004134.jpg'
+    url = 'http://images.cocodataset.org/train2017/000000000241.jpg'
     im = Image.open(requests.get(url, stream=True).raw)
 
     print("Image:", im.size)
 
+    start = time.time()
     scores, boxes = detect(im, detr, transform)
+    stop = time.time()
 
+    print(f"Time: {stop - start}s")
     plot_results(im, scores, boxes)
