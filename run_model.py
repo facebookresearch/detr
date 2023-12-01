@@ -75,6 +75,8 @@ def detect(im, model, transform):
     return probas[keep], bboxes_scaled
 
 def plot_results(pil_img, prob, boxes):
+    print("prob:", prob)
+    print("boxes:", boxes)
     plt.figure(figsize=(16,10))
     plt.imshow(pil_img)
     ax = plt.gca()
