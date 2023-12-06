@@ -150,8 +150,10 @@ def detect_set(model, transform, path_name):
         im.close()
 
         if (scores is None):
-            print("Image size too large")
-            continue
+            im = add_white_rectangle(im).convert("RGB")
+            start = time.time()
+            scores, boxes = detect(im, model, transform)
+            stop = time.time()
 
         print(len(boxes), ", Time:", stop - start, "s")
         sum_time += stop - start
