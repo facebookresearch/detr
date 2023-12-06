@@ -114,7 +114,7 @@ def detect_img(img_path, model, transform):
 def detect_set(model, transform, path_name):
     dir_path = path_name
 
-    img_set = glob.glob(dir_path + "*.jpg")
+    img_set = glob.glob(dir_path + "*.jpg") + glob.glob(dir_path + "*.png")
     img_set.sort()
 
     sum_time = 0
