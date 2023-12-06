@@ -97,6 +97,7 @@ def plot_results(pil_img, prob, boxes):
 from PIL import Image, ImageDraw
 
 def add_white_rectangle(img):
+    IMAGE_PADDING = 500
     # Open the image file
 
     # Create a new image with the same width and increased height
