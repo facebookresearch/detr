@@ -152,7 +152,7 @@ def detect_set(model, transform, path_name):
         im.close()
 
         if (scores is None):
-            padded_img = add_white_rectangle(url)
+            padded_img = add_white_rectangle(img_path)
             start = time.time()
             scores, boxes = detect(padded_img, model, transform)
             stop = time.time()
