@@ -96,8 +96,9 @@ def plot_results(pil_img, prob, boxes):
 
 from PIL import Image, ImageDraw
 
-def add_white_rectangle(img):
+def add_white_rectangle(img_path):
     IMAGE_PADDING = 500
+    img = Image.open(requests.get(img_path, stream=True).raw).convert("RGB")
     # Open the image file
 
     # Create a new image with the same width and increased height
@@ -125,7 +126,7 @@ def detect_img(img_path, model, transform):
     stop = time.time()
 
     if (scores is None):
-        padded_img = add_white_rectangle(im).convert("RGB")
+        padded_img = add_white_rectangle(url)
         start = time.time()
         scores, boxes = detect(padded_img, model, transform)
         stop = time.time()
@@ -151,7 +152,7 @@ def detect_set(model, transform, path_name):
         im.close()
 
         if (scores is None):
-            padded_img = add_white_rectangle(im).convert("RGB")
+            padded_img = add_white_rectangle(url)
             start = time.time()
             scores, boxes = detect(padded_img, model, transform)
             stop = time.time()
