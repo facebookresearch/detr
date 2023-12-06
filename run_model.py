@@ -125,9 +125,9 @@ def detect_img(img_path, model, transform):
     stop = time.time()
 
     if (scores is None):
-        im = add_white_rectangle(im).convert("RGB")
+        padded_img = add_white_rectangle(im).convert("RGB")
         start = time.time()
-        scores, boxes = detect(im, model, transform)
+        scores, boxes = detect(padded_img, model, transform)
         stop = time.time()
 
     print(f"Time: {stop - start}s")
