@@ -94,6 +94,25 @@ def plot_results(pil_img, prob, boxes):
     plt.axis('off')
     plt.show()
 
+from PIL import Image, ImageDraw
+
+def add_white_rectangle(img):
+    # Open the image file
+
+    # Create a new image with the same width and increased height
+    new_img = Image.new('RGB', (img.width, img.height + IMAGE_PADDING), color='white')
+
+    # Paste the original image onto the new image
+    new_img.paste(img, (0, 0))
+
+    # Draw a white rectangle at the bottom of the new image
+    draw = ImageDraw.Draw(new_img)
+    draw.rectangle((0, img.height, img.width, img.height + IMAGE_PADDING), fill='white')
+
+
+    # Return the new image
+    return new_img
+
 def detect_img(img_path, model, transform):
     url = img_path
     im = Image.open(requests.get(url, stream=True).raw).convert("RGB")
@@ -105,8 +124,10 @@ def detect_img(img_path, model, transform):
     stop = time.time()
 
     if (scores is None):
-        print("Image size too large")
-        return
+        im = add_white_rectangle(im).convert("RGB")
+        start = time.time()
+        scores, boxes = detect(im, model, transform)
+        stop = time.time()
 
     print(f"Time: {stop - start}s")
     plot_results(im, scores, boxes)
