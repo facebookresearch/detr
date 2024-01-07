@@ -99,6 +99,9 @@ def get_args_parser():
     parser.add_argument('--world_size', default=1, type=int,
                         help='number of distributed processes')
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
+
+    # detrmae
+    parser.add_argument("--detr_variant", default="detr", choices=['detr', 'detrmae'])
     return parser
 
 

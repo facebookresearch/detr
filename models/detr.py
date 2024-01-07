@@ -379,14 +379,24 @@ def build(args):
     backbone = build_backbone(args)
 
     transformer = build_transformer(args)
-
-    model = DETRMAE(
-        backbone,
-        transformer,
-        num_classes=num_classes,
-        num_queries=args.num_queries,
-        aux_loss=args.aux_loss,
-    )
+    if args.detr_variant == "detrmae":
+        print("using detrmae")
+        model = DETRMAE(
+            backbone,
+            transformer,
+            num_classes=num_classes,
+            num_queries=args.num_queries,
+            aux_loss=args.aux_loss,
+        )
+    else:
+        print("using detr")
+        model = DETR(
+            backbone,
+            transformer,
+            num_classes=num_classes,
+            num_queries=args.num_queries,
+            aux_loss=args.aux_loss,
+        )
     if args.masks:
         model = DETRsegm(model, freeze_detr=(args.frozen_weights is not None))
     matcher = build_matcher(args)
