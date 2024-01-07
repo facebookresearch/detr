@@ -81,6 +81,26 @@ class DETR(nn.Module):
                 for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
 
 
+def get_detr_decoder_and_embedings():
+    detr = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50', pretrained=True)
+    for param in detr.transformer.decoder.parameters():
+        param.requires_grad = False
+    for param in detr.query_embed.parameters():
+        param.requires_grad = True
+    for param in detr.bbox_embed.parameters():
+        param.requires_grad = True
+    for param in detr.class_embed.parameters():
+        param.requires_grad = False
+    return detr.transformer.decoder, detr.query_embed, detr.bbox_embed, detr.class_embed
+
+
+def get_mae_encoder():
+    encoder = ViTMAEModel.from_pretrained("facebook/vit-mae-base")
+    for param in encoder.parameters():
+        param.requires_grad = False
+    return encoder
+
+
 class DETRMAE(nn.Module):
     def __init__(
         self, _backbone, _transformer, num_classes, num_queries, aux_loss=False, hidden_dim=256
@@ -90,26 +110,16 @@ class DETRMAE(nn.Module):
         self.num_classes = num_classes
         self.num_queries = num_queries
         self.aux_loss = aux_loss
-        self.encoder = self.get_mae_encoder()
-        decoder, query_embed, bbox_embed, class_embed = self.get_detr_decoder_and_embedings()
+
+        self.encoder = get_mae_encoder()
+
+        decoder, query_embed, bbox_embed, class_embed = get_detr_decoder_and_embedings()
         self.decoder = decoder
         self.query_embed = query_embed
         self.bbox_embed = bbox_embed
         self.class_embed = class_embed
 
         self.emb_linear = torch.nn.Linear(768, hidden_dim)
-
-    def get_mae_encoder(self):
-        encoder = ViTMAEModel.from_pretrained("facebook/vit-mae-base")
-        for param in encoder.parameters():
-            param.requires_grad = False
-        return encoder
-
-    def get_detr_decoder_and_embedings(self):
-        detr = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50', pretrained=True)
-        for param in detr.parameters():
-            param.requires_grad = False
-        return detr.transformer.decoder, detr.query_embed, detr.bbox_embed, detr.class_embed
 
     def forward(self, samples: NestedTensor):
         if isinstance(samples, (list, torch.Tensor)):
