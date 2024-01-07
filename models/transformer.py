@@ -8,7 +8,7 @@ Copy-paste from torch.nn.Transformer with modifications:
     * decoder returns a stack of activations from all decoding layers
 """
 import copy
-from typing import Optional, List
+from typing import Optional
 
 import torch
 import torch.nn.functional as F

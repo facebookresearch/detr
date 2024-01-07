@@ -5,6 +5,7 @@ DETR model and criterion classes.
 import torch
 import torch.nn.functional as F
 from torch import nn
+from transformers import ViTMAEModel
 
 from util import box_ops
 from util.misc import (NestedTensor, nested_tensor_from_tensor_list,
@@ -78,6 +79,54 @@ class DETR(nn.Module):
         # as a dict having both a Tensor and a list.
         return [{'pred_logits': a, 'pred_boxes': b}
                 for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
+
+
+class DETRMAE(nn.Module):
+    def __init__(
+        self, _backbone, _transformer, num_classes, num_queries, aux_loss=False, hidden_dim=256
+    ):
+        super().__init__()
+
+        self.num_classes = num_classes
+        self.num_queries = num_queries
+        self.aux_loss = aux_loss
+        self.encoder = self.get_mae_encoder()
+        decoder, query_embed, bbox_embed, class_embed = self.get_detr_decoder_and_embedings()
+        self.decoder = decoder
+        self.query_embed = query_embed
+        self.bbox_embed = bbox_embed
+        self.class_embed = class_embed
+
+        self.emb_linear = torch.nn.Linear(768, hidden_dim)
+
+    def get_mae_encoder(self):
+        encoder = ViTMAEModel.from_pretrained("facebook/vit-mae-base")
+        for param in encoder.parameters():
+            param.requires_grad = False
+        return encoder
+
+    def get_detr_decoder_and_embedings(self):
+        detr = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50', pretrained=True)
+        for param in detr.parameters():
+            param.requires_grad = False
+        return detr.transformer.decoder, detr.query_embed, detr.bbox_embed, detr.class_embed
+
+    def forward(self, samples: NestedTensor):
+        if isinstance(samples, (list, torch.Tensor)):
+            samples = nested_tensor_from_tensor_list(samples)
+        memory = self.encoder(samples.tensors)
+        memory = memory.last_hidden_state
+        memory = self.emb_linear(memory)
+        bs = memory.shape[0]
+        memory = memory.permute(1, 0, 2)
+        query_embed = self.query_embed.weight.unsqueeze(1).repeat(1, bs, 1)
+        tgt = torch.zeros_like(query_embed)
+        h = self.decoder(tgt, memory, query_pos=query_embed)
+        h = h.transpose(1, 2)
+        outputs_class = self.class_embed(h)
+        outputs_coord = self.bbox_embed(h).sigmoid()
+        out = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1]}
+        return out
 
 
 class SetCriterion(nn.Module):
@@ -321,7 +370,7 @@ def build(args):
 
     transformer = build_transformer(args)
 
-    model = DETR(
+    model = DETRMAE(
         backbone,
         transformer,
         num_classes=num_classes,
