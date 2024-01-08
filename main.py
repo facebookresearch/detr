@@ -102,6 +102,7 @@ def get_args_parser():
 
     # detrmae
     parser.add_argument("--detr_variant", default="detr", choices=['detr', 'detrmae'])
+    parser.add_argument("--freeze_detrmae_pretrained_detr_params", type=bool, default=False)
     return parser
 
 

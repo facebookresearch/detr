@@ -81,16 +81,17 @@ class DETR(nn.Module):
                 for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
 
 
-def get_detr_decoder_and_embedings():
+def get_detr_decoder_and_embedings(freeze: bool):
     detr = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50', pretrained=True)
-    for param in detr.transformer.decoder.parameters():
-        param.requires_grad = False
-    for param in detr.query_embed.parameters():
-        param.requires_grad = True
-    for param in detr.bbox_embed.parameters():
-        param.requires_grad = True
-    for param in detr.class_embed.parameters():
-        param.requires_grad = False
+    if freeze:
+        for param in detr.transformer.decoder.parameters():
+            param.requires_grad = False
+        for param in detr.query_embed.parameters():
+            param.requires_grad = True
+        for param in detr.bbox_embed.parameters():
+            param.requires_grad = True
+        for param in detr.class_embed.parameters():
+            param.requires_grad = False
     return detr.transformer.decoder, detr.query_embed, detr.bbox_embed, detr.class_embed
 
 
@@ -103,17 +104,20 @@ def get_mae_encoder():
 
 class DETRMAE(nn.Module):
     def __init__(
-        self, _backbone, _transformer, num_classes, num_queries, aux_loss=False, hidden_dim=256
+        self,
+        num_classes,
+        num_queries,
+        freeze_pretrained_detr_params: bool,
+        hidden_dim=256,
     ):
         super().__init__()
 
         self.num_classes = num_classes
         self.num_queries = num_queries
-        self.aux_loss = aux_loss
 
         self.encoder = get_mae_encoder()
 
-        decoder, query_embed, bbox_embed, class_embed = get_detr_decoder_and_embedings()
+        decoder, query_embed, bbox_embed, class_embed = get_detr_decoder_and_embedings(freeze_pretrained_detr_params)
         self.decoder = decoder
         self.query_embed = query_embed
         self.bbox_embed = bbox_embed
@@ -381,12 +385,12 @@ def build(args):
     transformer = build_transformer(args)
     if args.detr_variant == "detrmae":
         print("using detrmae")
+        if args.freeze_detrmae_pretrained_detr_params:
+            print("freezing pretrained detr params")
         model = DETRMAE(
-            backbone,
-            transformer,
             num_classes=num_classes,
             num_queries=args.num_queries,
-            aux_loss=args.aux_loss,
+            freeze_pretrained_detr_params=args.freeze_detrmae_pretrained_detr_params
         )
     else:
         print("using detr")
