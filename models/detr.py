@@ -123,12 +123,24 @@ class DETRMAE(nn.Module):
         self.bbox_embed = bbox_embed
         self.class_embed = class_embed
 
-        self.emb_linear = torch.nn.Linear(768, hidden_dim)
+        # self.emb_linear = torch.nn.Linear(768, hidden_dim)
+        self.emb_linear = torch.nn.Sequential(
+            nn.Linear(768, 768),
+            nn.ReLU(),
+            nn.Linear(768, 768),
+            nn.ReLU(),
+            nn.Linear(768, hidden_dim)
+        )
 
-    def forward(self, samples: NestedTensor):
+    def forward(self, samples: NestedTensor, return_mask = False):
         if isinstance(samples, (list, torch.Tensor)):
             samples = nested_tensor_from_tensor_list(samples)
         memory = self.encoder(samples.tensors)
+
+        mask = None
+        if return_mask:
+            mask = memory.mask
+
         memory = memory.last_hidden_state
         memory = self.emb_linear(memory)
         bs = memory.shape[0]
@@ -140,6 +152,10 @@ class DETRMAE(nn.Module):
         outputs_class = self.class_embed(h)
         outputs_coord = self.bbox_embed(h).sigmoid()
         out = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1]}
+
+        if return_mask:
+            return out, mask
+
         return out
 
 
@@ -380,9 +396,7 @@ def build(args):
         num_classes = 250
     device = torch.device(args.device)
 
-    backbone = build_backbone(args)
 
-    transformer = build_transformer(args)
     if args.detr_variant == "detrmae":
         print("using detrmae")
         if args.freeze_detrmae_pretrained_detr_params:
@@ -394,6 +408,8 @@ def build(args):
         )
     else:
         print("using detr")
+        backbone = build_backbone(args)
+        transformer = build_transformer(args)
         model = DETR(
             backbone,
             transformer,
