@@ -107,6 +107,7 @@ def get_args_parser():
 
     # wandb
     parser.add_argument("--no_wandb", type=bool, default=False)
+    parser.add_argument("--wandb_steps_logging_freq", type=int, default=500)
     return parser
 
 
@@ -202,7 +203,7 @@ def main(args):
                 sampler_train.set_epoch(epoch)
             train_stats = train_one_epoch(
                 model, criterion, data_loader_train, optimizer, device, epoch,
-                args.clip_max_norm, wandb=wandb)
+                args.clip_max_norm, wandb=wandb, wandb_steps_logging_freq=args.wandb_steps_logging_freq)
             lr_scheduler.step()
             if args.output_dir:
                 checkpoint_paths = [output_dir / 'checkpoint.pth']
