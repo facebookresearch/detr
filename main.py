@@ -197,13 +197,13 @@ def main(args):
         print("Start training")
         start_time = time.time()
         if not args.no_wandb:
-            wandb = wandb_utils.init(config=vars(args))
+            wandb_run = wandb_utils.init(config=vars(args))
         for epoch in range(args.start_epoch, args.epochs):
             if args.distributed:
                 sampler_train.set_epoch(epoch)
             train_stats = train_one_epoch(
                 model, criterion, data_loader_train, optimizer, device, epoch,
-                args.clip_max_norm, wandb=wandb, wandb_steps_logging_freq=args.wandb_steps_logging_freq)
+                args.clip_max_norm, wandb_run=wandb_run, wandb_steps_logging_freq=args.wandb_steps_logging_freq)
             lr_scheduler.step()
             if args.output_dir:
                 checkpoint_paths = [output_dir / 'checkpoint.pth']
@@ -218,13 +218,14 @@ def main(args):
                         'epoch': epoch,
                         'args': args,
                     }, checkpoint_path)
-                    if wandb:
-                        wandb.save(checkpoint_path)
+                    if wandb_run:
+                        wandb_run.save(checkpoint_path)
 
             test_stats, coco_evaluator = evaluate(
                 model, criterion, postprocessors, data_loader_val, base_ds, device, args.output_dir
             )
-
+            if wandb_run:
+                wandb_run.log({f"{k}_test_epoch": v for k, v in test_stats.items()})
             log_stats = {**{f'train_{k}': v for k, v in train_stats.items()}, **{f'test_{k}': v for k, v in test_stats.items()}, 'epoch': epoch, 'n_parameters': n_parameters}
 
             if args.output_dir and utils.is_main_process():
@@ -244,11 +245,11 @@ def main(args):
         total_time = time.time() - start_time
         total_time_str = str(datetime.timedelta(seconds=int(total_time)))
         print('Training time {}'.format(total_time_str))
-        if wandb:
-            wandb.finish()
+        if wandb_run:
+            wandb_run.finish()
     except Exception:
-        if wandb:
-            wandb.finish()
+        if wandb_run:
+            wandb_run.finish()
 
 
 if __name__ == '__main__':
