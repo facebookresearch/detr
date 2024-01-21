@@ -218,13 +218,14 @@ def main(args):
                         'epoch': epoch,
                         'args': args,
                     }, checkpoint_path)
-                    if wandb_run:
+                    if wandb_run is not None:
+                        print(f"Saving checkpoint to {checkpoint_path}")
                         wandb_run.save(checkpoint_path)
 
             test_stats, coco_evaluator = evaluate(
                 model, criterion, postprocessors, data_loader_val, base_ds, device, args.output_dir
             )
-            if wandb_run:
+            if wandb_run is not None:
                 wandb_run.log({f"{k}_test_epoch": v for k, v in test_stats.items()})
             log_stats = {**{f'train_{k}': v for k, v in train_stats.items()}, **{f'test_{k}': v for k, v in test_stats.items()}, 'epoch': epoch, 'n_parameters': n_parameters}
 
@@ -245,10 +246,12 @@ def main(args):
         total_time = time.time() - start_time
         total_time_str = str(datetime.timedelta(seconds=int(total_time)))
         print('Training time {}'.format(total_time_str))
-        if wandb_run:
+        if wandb_run is not None:
             wandb_run.finish()
-    except Exception:
-        if wandb_run:
+    except Exception as e:
+        print("Exception occurred, exiting")
+        print(e)
+        if wandb_run is not None:
             wandb_run.finish()
 
 
