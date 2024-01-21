@@ -108,6 +108,7 @@ class DETRMAE(nn.Module):
         num_classes,
         num_queries,
         freeze_pretrained_detr_params: bool,
+        mask_ratio: float,
         hidden_dim=256,
     ):
         super().__init__()
@@ -116,6 +117,7 @@ class DETRMAE(nn.Module):
         self.num_queries = num_queries
 
         self.encoder = get_mae_encoder()
+        self.encoder.config.mask_ratio = mask_ratio
 
         decoder, query_embed, bbox_embed, class_embed = get_detr_decoder_and_embedings(freeze_pretrained_detr_params)
         self.decoder = decoder
@@ -397,7 +399,8 @@ def build(args):
         model = DETRMAE(
             num_classes=num_classes,
             num_queries=args.num_queries,
-            freeze_pretrained_detr_params=args.freeze_detrmae_pretrained_detr_params
+            freeze_pretrained_detr_params=args.freeze_detrmae_pretrained_detr_params,
+            mask_ratio=args.mask_ratio,
         )
     else:
         print("using detr")
