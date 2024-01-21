@@ -220,7 +220,7 @@ def main(args):
                     }, checkpoint_path)
                     if wandb_run is not None:
                         print(f"Saving checkpoint to {checkpoint_path}")
-                        wandb_run.save(checkpoint_path)
+                        wandb_run.save(str(checkpoint_path))
 
             test_stats, coco_evaluator = evaluate(
                 model, criterion, postprocessors, data_loader_val, base_ds, device, args.output_dir
