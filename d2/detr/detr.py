@@ -79,6 +79,7 @@ class Detr(nn.Module):
 
         self.num_classes = cfg.MODEL.DETR.NUM_CLASSES
         self.mask_on = cfg.MODEL.MASK_ON
+        self.input_format = cfg.INPUT.MASK_FORMAT
         hidden_dim = cfg.MODEL.DETR.HIDDEN_DIM
         num_queries = cfg.MODEL.DETR.NUM_OBJECT_QUERIES
         # Transformer parameters:
@@ -150,8 +151,8 @@ class Detr(nn.Module):
         )
         self.criterion.to(self.device)
 
-        pixel_mean = torch.Tensor(cfg.MODEL.PIXEL_MEAN).to(self.device).view(3, 1, 1)
-        pixel_std = torch.Tensor(cfg.MODEL.PIXEL_STD).to(self.device).view(3, 1, 1)
+        pixel_mean = torch.Tensor(cfg.MODEL.PIXEL_MEAN).to(self.device).view(len(cfg.MODEL.PIXEL_MEAN), 1, 1)
+        pixel_std = torch.Tensor(cfg.MODEL.PIXEL_STD).to(self.device).view(len(cfg.MODEL.PIXEL_STD), 1, 1)
         self.normalizer = lambda x: (x - pixel_mean) / pixel_std
         self.to(self.device)
 
@@ -210,7 +211,8 @@ class Detr(nn.Module):
             new_targets.append({"labels": gt_classes, "boxes": gt_boxes})
             if self.mask_on and hasattr(targets_per_image, 'gt_masks'):
                 gt_masks = targets_per_image.gt_masks
-                gt_masks = convert_coco_poly_to_mask(gt_masks.polygons, h, w)
+                if self.input_format != "BITMASK" or self.input_format != "bitmask":
+                    gt_masks = convert_coco_poly_to_mask(gt_masks.polygons, h, w)
                 new_targets[-1].update({'masks': gt_masks})
         return new_targets
 
@@ -242,7 +244,7 @@ class Detr(nn.Module):
             result.pred_boxes.scale(scale_x=image_size[1], scale_y=image_size[0])
             if self.mask_on:
                 mask = F.interpolate(mask_pred[i].unsqueeze(0), size=image_size, mode='bilinear', align_corners=False)
-                mask = mask[0].sigmoid() > 0.5
+                mask = mask[0].sigmoid() > cfg.MODEL.MASK_THRESHOLD
                 B, N, H, W = mask_pred.shape
                 mask = BitMasks(mask.cpu()).crop_and_resize(result.pred_boxes.tensor.cpu(), 32)
                 result.pred_masks = mask.unsqueeze(1).to(mask_pred[0].device)
