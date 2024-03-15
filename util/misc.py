@@ -10,6 +10,7 @@ import time
 from collections import defaultdict, deque
 import datetime
 import pickle
+import json
 from packaging import version
 from typing import Optional, List
 
@@ -402,6 +403,11 @@ def is_main_process():
 def save_on_master(*args, **kwargs):
     if is_main_process():
         torch.save(*args, **kwargs)
+
+
+def save_json(results, save_dir):
+    with open(save_dir, 'w') as f:
+        f.write(json.dumps(results))
 
 
 def init_distributed_mode(args):
