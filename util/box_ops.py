@@ -20,18 +20,18 @@ def box_xyxy_to_cxcywh(x):
     return torch.stack(b, dim=-1)
 
 
-# modified from torchvision to also return the union
+# Modified from torchvision to also return the union and to work only on the
+# last two dimensions, assuming the other ones are identical.
 def box_iou(boxes1, boxes2):
-    area1 = box_area(boxes1)
-    area2 = box_area(boxes2)
+    lt = torch.max(boxes1[..., None, :2], boxes2[..., None, :, :2])  # [..., N,M,2]
+    rb = torch.min(boxes1[..., None, 2:], boxes2[..., None, :, 2:])  # [..., N,M,2]
 
-    lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # [N,M,2]
-    rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # [N,M,2]
+    wh = (rb - lt).clamp(min=0)  # [..., N,M,2]
+    inter = wh[..., 0] * wh[..., 1]  # [..., N,M]
 
-    wh = (rb - lt).clamp(min=0)  # [N,M,2]
-    inter = wh[:, :, 0] * wh[:, :, 1]  # [N,M]
-
-    union = area1[:, None] + area2 - inter
+    area1 = box_area(boxes1.view(-1, 4)).view(boxes1.shape[:-1])
+    area2 = box_area(boxes2.view(-1, 4)).view(boxes2.shape[:-1])
+    union = area1[..., None] + area2[..., None, :] - inter
 
     iou = inter / union
     return iou, union
@@ -48,15 +48,15 @@ def generalized_box_iou(boxes1, boxes2):
     """
     # degenerate boxes gives inf / nan results
     # so do an early check
-    assert (boxes1[:, 2:] >= boxes1[:, :2]).all()
-    assert (boxes2[:, 2:] >= boxes2[:, :2]).all()
+    assert (boxes1[..., 2:] >= boxes1[..., :2]).all()
+    assert (boxes2[..., 2:] >= boxes2[..., :2]).all()
     iou, union = box_iou(boxes1, boxes2)
 
-    lt = torch.min(boxes1[:, None, :2], boxes2[:, :2])
-    rb = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
+    lt = torch.min(boxes1[..., None, :2], boxes2[..., None, :, :2])
+    rb = torch.max(boxes1[..., None, 2:], boxes2[..., None, :, 2:])
 
-    wh = (rb - lt).clamp(min=0)  # [N,M,2]
-    area = wh[:, :, 0] * wh[:, :, 1]
+    wh = (rb - lt).clamp(min=0)  # [..., N,M,2]
+    area = wh[..., 0] * wh[..., 1]
 
     return iou - (area - union) / area
 

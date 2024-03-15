@@ -5,6 +5,7 @@ Modules to compute the matching cost and solve the corresponding LSAP.
 import torch
 from scipy.optimize import linear_sum_assignment
 from torch import nn
+from torch.nn.utils.rnn import pad_sequence
 
 from util.box_ops import box_cxcywh_to_xyxy, generalized_box_iou
 
@@ -52,34 +53,66 @@ class HungarianMatcher(nn.Module):
             For each batch element, it holds:
                 len(index_i) = len(index_j) = min(num_queries, num_target_boxes)
         """
-        bs, num_queries = outputs["pred_logits"].shape[:2]
+        # In the comments below:
+        # - `bs` is the batch size, i.e. outputs["pred_logits"].shape[0];
+        # - `mo` is the maximum number of objects over all the targets,
+        # i.e. `max((len(v["labels"]) for v in targets))`;
+        # - `q` is the number of queries, i.e. outputs["pred_logits"].shape[1];
+        # - `cl` is the number of classes including no-object,
+        # i.e. outputs["pred_logits"].shape[2] or self.num_classes + 1.
+        if len(targets) == 1:
+            # This branch is just an optimization, not needed for correctness.
+            tgt_ids = targets[0]["labels"].unsqueeze(dim=0)
+            tgt_bbox = targets[0]["boxes"].unsqueeze(dim=0)
+        else:
+            tgt_ids = pad_sequence(
+                [target["labels"] for target in targets],
+                batch_first=True,
+                padding_value=0
+            )  # (bs, mo)
+            tgt_bbox = pad_sequence(
+                [target["boxes"] for target in targets],
+                batch_first=True,
+                padding_value=0
+            )  # (bs, mo, 4)
 
-        # We flatten to compute the cost matrices in a batch
-        out_prob = outputs["pred_logits"].flatten(0, 1).softmax(-1)  # [batch_size * num_queries, num_classes]
-        out_bbox = outputs["pred_boxes"].flatten(0, 1)  # [batch_size * num_queries, 4]
-
-        # Also concat the target labels and boxes
-        tgt_ids = torch.cat([v["labels"] for v in targets])
-        tgt_bbox = torch.cat([v["boxes"] for v in targets])
-
-        # Compute the classification cost. Contrary to the loss, we don't use the NLL,
-        # but approximate it in 1 - proba[target class].
-        # The 1 is a constant that doesn't change the matching, it can be ommitted.
-        cost_class = -out_prob[:, tgt_ids]
+        out_bbox = outputs["pred_boxes"]  # (bs, q, 4)
 
         # Compute the L1 cost between boxes
-        cost_bbox = torch.cdist(out_bbox, tgt_bbox, p=1)
+        cost_bbox = torch.cdist(out_bbox, tgt_bbox, p=1)  # (bs, q, mo)
 
         # Compute the giou cost betwen boxes
-        cost_giou = -generalized_box_iou(box_cxcywh_to_xyxy(out_bbox), box_cxcywh_to_xyxy(tgt_bbox))
+        out_bbox_xyxy = box_cxcywh_to_xyxy(out_bbox)
+        tgt_bbox_xyxy = box_cxcywh_to_xyxy(tgt_bbox)
+        giou = generalized_box_iou(
+            out_bbox_xyxy, tgt_bbox_xyxy)  # (bs, q, mo)
+
+        # Compute the classification cost. Contrary to the loss, we don't use
+        # the Negative Log Likelihood, but approximate it
+        # in `1 - proba[target class]`. The 1 is a constant that does not
+        # change the matching, it can be ommitted.
+        out_prob = outputs["pred_logits"].softmax(-1)  # (bs, q, c)
+        prob_class = torch.gather(
+            out_prob,
+            dim=2,
+            index=tgt_ids.unsqueeze(dim=1).expand(-1, out_prob.shape[1], -1)
+        )  # (bs, q, mo)
 
         # Final cost matrix
-        C = self.cost_bbox * cost_bbox + self.cost_class * cost_class + self.cost_giou * cost_giou
-        C = C.view(bs, num_queries, -1).cpu()
+        C = self.cost_bbox * cost_bbox - self.cost_giou * giou - self.cost_class * prob_class
+        c = C.cpu()
 
-        sizes = [len(v["boxes"]) for v in targets]
-        indices = [linear_sum_assignment(c[i]) for i, c in enumerate(C.split(sizes, -1))]
-        return [(torch.as_tensor(i, dtype=torch.int64), torch.as_tensor(j, dtype=torch.int64)) for i, j in indices]
+        indices = [
+            linear_sum_assignment(c[i, :, :len(v["labels"])])
+            for i, v in enumerate(targets)
+        ]
+        return [
+            (
+                torch.as_tensor(i, dtype=torch.int64),
+                torch.as_tensor(j, dtype=torch.int64),
+            )
+            for i, j in indices
+        ]
 
 
 def build_matcher(args):

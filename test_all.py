@@ -1,9 +1,14 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 import io
 import unittest
+import functools
+import operator
+
+from itertools import combinations_with_replacement
 
 import torch
 from torch import nn, Tensor
+from torchvision import ops
 from typing import List
 
 from models.matcher import HungarianMatcher
@@ -40,14 +45,21 @@ class Tester(unittest.TestCase):
         matcher = HungarianMatcher()
         targets = [{'labels': tgt_labels, 'boxes': tgt_boxes}]
         indices_single = matcher({'pred_logits': logits, 'pred_boxes': boxes}, targets)
-        indices_batched = matcher({'pred_logits': logits.repeat(2, 1, 1),
-                                   'pred_boxes': boxes.repeat(2, 1, 1)}, targets * 2)
+        batch_size = 2
+        indices_batched = matcher(
+            {
+                'pred_logits': logits.repeat(batch_size, 1, 1),
+                'pred_boxes': boxes.repeat(batch_size, 1, 1),
+            },
+            targets * batch_size,
+        )
         self.assertEqual(len(indices_single[0][0]), n_targets)
         self.assertEqual(len(indices_single[0][1]), n_targets)
-        self.assertEqual(self.indices_torch2python(indices_single),
-                         self.indices_torch2python([indices_batched[0]]))
-        self.assertEqual(self.indices_torch2python(indices_single),
-                         self.indices_torch2python([indices_batched[1]]))
+        for i in range(batch_size):
+            self.assertEqual(
+                self.indices_torch2python(indices_single),
+                self.indices_torch2python([indices_batched[i]]),
+            )
 
         # test with empty targets
         tgt_labels_empty = torch.randint(high=n_classes, size=(0,))
@@ -101,6 +113,56 @@ class Tester(unittest.TestCase):
         x = torch.rand(3, 200, 200)
         out = model([x])
         self.assertIn('pred_logits', out)
+
+    def test_box_iou_multiple_dimensions(self):
+        for extra_dims in range(3):
+            for extra_lengths in combinations_with_replacement(range(1, 4), extra_dims):
+                p = functools.reduce(operator.mul, extra_lengths, 1)
+                for n in range(3):
+                    a = torch.rand(extra_lengths + (n, 4))
+                    for m in range(3):
+                        b = torch.rand(extra_lengths + (m, 4))
+                        iou, union = box_ops.box_iou(a, b)
+                        self.assertTupleEqual(iou.shape, union.shape)
+                        self.assertTupleEqual(iou.shape, extra_lengths + (n, m))
+                        iou_it = iter(iou.view(p, n, m))
+                        for x, y in zip(a.view(p, n, 4), b.view(p, m, 4)):
+                            self.assertTrue(
+                                torch.equal(next(iou_it), ops.box_iou(x, y))
+                            )
+
+    def test_generalized_box_iou_multiple_dimensions(self):
+        a = torch.tensor([1, 1, 2, 2])
+        b = torch.tensor([1, 2, 3, 5])
+        ab = -0.1250
+        self.assertTrue(
+            torch.equal(
+                box_ops.generalized_box_iou(a[None, :], b[None, :]),
+                torch.Tensor([[ab]]),
+            )
+        )
+        self.assertTrue(
+            torch.equal(
+                box_ops.generalized_box_iou(a[None, None, :], b[None, None, :]),
+                torch.Tensor([[[ab]]]),
+            )
+        )
+        self.assertTrue(
+            torch.equal(
+                box_ops.generalized_box_iou(
+                    a[None, None, None, :], b[None, None, None, :]
+                ),
+                torch.Tensor([[[[ab]]]]),
+            )
+        )
+        self.assertTrue(
+            torch.equal(
+                box_ops.generalized_box_iou(
+                    torch.stack([a, a, b, b]), torch.stack([a, b])
+                ),
+                torch.Tensor(torch.Tensor([[1, ab], [1, ab], [ab, 1], [ab, 1]])),
+            )
+        )
 
     def test_warpped_model_script_detection(self):
         class WrappedDETR(nn.Module):
