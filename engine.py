@@ -27,9 +27,23 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
         samples = samples.to(device)
+
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
         outputs = model(samples)
+
+        # print(image_id)
+        # outputs = model(samples, temp)
+        # torch.save(outputs, 'outputs.pt')
+        # # print(outputs)
+        # outputs_json = {k: v.item() for k, v in outputs.items()}
+        # tf = open("data.json", "w")
+        # json.dump(outputs_json, tf)
+        # tf.close()
+
+        # with open('data.txt','w') as f:
+        #     f.write(outputs)
+
         loss_dict = criterion(outputs, targets)
         weight_dict = criterion.weight_dict
         losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)

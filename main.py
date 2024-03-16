@@ -16,21 +16,29 @@ from datasets import build_dataset, get_coco_api_from_dataset
 from engine import evaluate, train_one_epoch
 from models import build_model
 
+import PIL.Image as Image
+from torchvision import transforms
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
     parser.add_argument('--lr', default=1e-4, type=float)
-    parser.add_argument('--lr_backbone', default=1e-5, type=float)
+    # parser.add_argument('--lr_backbone', default=1e-5, type=float)
+    # freezing the backbone
+    parser.add_argument('--lr_backbone', default=0, type=float)
     parser.add_argument('--batch_size', default=2, type=int)
     parser.add_argument('--weight_decay', default=1e-4, type=float)
     parser.add_argument('--epochs', default=300, type=int)
     parser.add_argument('--lr_drop', default=200, type=int)
     parser.add_argument('--clip_max_norm', default=0.1, type=float,
                         help='gradient clipping max norm')
-
+    parser.add_argument('--num_classes', default=3, type=int, help = "max class id. Refer comment at end of detr.py")
     # Model parameters
     parser.add_argument('--frozen_weights', type=str, default=None,
                         help="Path to the pretrained model. If set, only the mask head will be trained")
+    # parser.add_argument('--bev_regression', action='store_false',
+    #                     help="Add flag to regress bev directly")
+    # parser.add_argument('--depth_regression', action='store_true',
+    #                     help="Add flag to regress depth directly else use multi bin approach")
     # * Backbone
     parser.add_argument('--backbone', default='resnet50', type=str,
                         help="Name of the convolutional backbone to use")
@@ -59,6 +67,11 @@ def get_args_parser():
     # * Segmentation
     parser.add_argument('--masks', action='store_true',
                         help="Train segmentation head if the flag is provided")
+    # Depth
+    parser.add_argument('--num_depth_bins', type=int , default = 9,
+                        help="Number of depth bins")
+    parser.add_argument('--depth_bin_res', type=int , default = 10,
+                        help="Width of each depth bin")
 
     # Loss
     parser.add_argument('--no_aux_loss', dest='aux_loss', action='store_false',
@@ -75,26 +88,39 @@ def get_args_parser():
     parser.add_argument('--dice_loss_coef', default=1, type=float)
     parser.add_argument('--bbox_loss_coef', default=5, type=float)
     parser.add_argument('--giou_loss_coef', default=2, type=float)
+    parser.add_argument('--depth_loss_coef', default=1, type=float)
+    parser.add_argument('--bev_loss_coef', default=2, type=float)
+    parser.add_argument('--head_loss_coef', default=2, type=float)
+    parser.add_argument('--feet_loss_coef', default=2, type=float)
+    parser.add_argument('--dim_loss_coef', default=2, type=float)
+    parser.add_argument('--angle_loss_coef', default=1, type=float)
     parser.add_argument('--eos_coef', default=0.1, type=float,
                         help="Relative classification weight of the no-object class")
 
     # dataset parameters
-    parser.add_argument('--dataset_file', default='coco')
+    # parser.add_argument('--dataset_file', default='coco')
+    parser.add_argument('--dataset_file', default='kitti_coco')
     parser.add_argument('--coco_path', type=str)
     parser.add_argument('--coco_panoptic_path', type=str)
+    parser.add_argument('--kitti_path', default='/srip-vol/datasets/KITTI3D/', type=str)
     parser.add_argument('--remove_difficult', action='store_true')
 
-    parser.add_argument('--output_dir', default='',
+    # parser.add_argument('--output_dir', default='',
+    parser.add_argument('--output_dir', default='output_logs_local',
                         help='path where to save, empty for no saving')
     parser.add_argument('--device', default='cuda',
                         help='device to use for training / testing')
     parser.add_argument('--seed', default=42, type=int)
-    parser.add_argument('--resume', default='', help='resume from checkpoint')
+    # parser.add_argument('--resume', default='', help='resume from checkpoint')
+    parser.add_argument('--resume', default='pretrained/checkpoint0299.pth', help='resume from checkpoint')
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
                         help='start epoch')
     parser.add_argument('--eval', action='store_true')
+    parser.add_argument('--test', action='store_true')
+
     parser.add_argument('--num_workers', default=2, type=int)
 
+    parser.add_argument('--test_image', default = None, type = str, help = 'Path to image for testing')
     # distributed training parameters
     parser.add_argument('--world_size', default=1, type=int,
                         help='number of distributed processes')
@@ -110,6 +136,7 @@ def main(args):
         assert args.masks, "Frozen training is meant for segmentation only"
     print(args)
 
+    args.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device = torch.device(args.device)
 
     # fix the seed for reproducibility
@@ -120,6 +147,23 @@ def main(args):
 
     model, criterion, postprocessors = build_model(args)
     model.to(device)
+
+    for name, param in model.transformer.named_parameters():
+        param.requires_grad = False
+    
+    for name, param in model.bbox_embed.named_parameters():
+        param.requires_grad = False
+    
+    for name, param in model.class_embed.named_parameters():
+        param.requires_grad = False
+    
+    # for name, param in model.depth_delta.named_parameters():
+    #     param.requires_grad = False
+    
+    # for name, param in model.depth_bin.named_parameters():
+    #     param.requires_grad = False
+    
+    # seed = seed + model
 
     model_without_ddp = model
     if args.distributed:
@@ -174,10 +218,24 @@ def main(args):
             checkpoint = torch.hub.load_state_dict_from_url(
                 args.resume, map_location='cpu', check_hash=True)
         else:
+            print('loading pretrianed weights.....')
             checkpoint = torch.load(args.resume, map_location='cpu')
-        model_without_ddp.load_state_dict(checkpoint['model'])
+        # model_without_ddp.load_state_dict(checkpoint['model'])
+        # del checkpoint["model"]["class_embed.weight"]
+        # del checkpoint["model"]["class_embed.bias"]
+        # Remove box weights
+        # keys_to_delete = []
+        # for key in checkpoint["model"]:
+        #     if 'box_embed' in key:
+        #         print(key)
+        #         keys_to_delete.append(key)
+
+        # for key in keys_to_delete:
+        #     del checkpoint["model"][key]
+
+        model_without_ddp.load_state_dict(checkpoint['model'], strict = False)
         if not args.eval and 'optimizer' in checkpoint and 'lr_scheduler' in checkpoint and 'epoch' in checkpoint:
-            optimizer.load_state_dict(checkpoint['optimizer'])
+            # optimizer.load_state_dict(checkpoint['optimizer'])
             lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
             args.start_epoch = checkpoint['epoch'] + 1
 

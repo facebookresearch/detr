@@ -16,11 +16,12 @@ from .matcher import build_matcher
 from .segmentation import (DETRsegm, PostProcessPanoptic, PostProcessSegm,
                            dice_loss, sigmoid_focal_loss)
 from .transformer import build_transformer
+from .transformer_BEV import build_transformer_BEV
 
 
 class DETR(nn.Module):
     """ This is the DETR module that performs object detection """
-    def __init__(self, backbone, transformer, num_classes, num_queries, aux_loss=False):
+    def __init__(self, backbone, transformer, transformer_BEV, num_classes, num_queries, aux_loss=False):
         """ Initializes the model.
         Parameters:
             backbone: torch module of the backbone to be used. See backbone.py
@@ -33,6 +34,7 @@ class DETR(nn.Module):
         super().__init__()
         self.num_queries = num_queries
         self.transformer = transformer
+        self.transformer_BEV = transformer_BEV
         hidden_dim = transformer.d_model
         self.class_embed = nn.Linear(hidden_dim, num_classes + 1)
         self.bbox_embed = MLP(hidden_dim, hidden_dim, 4, 3)
@@ -40,6 +42,9 @@ class DETR(nn.Module):
         self.input_proj = nn.Conv2d(backbone.num_channels, hidden_dim, kernel_size=1)
         self.backbone = backbone
         self.aux_loss = aux_loss
+        self.bev_embed = MLP(hidden_dim, hidden_dim, 2, 2)
+        self.angle_embed = MLP(hidden_dim, hidden_dim, 24, 2)
+        self.dim_embed = MLP(hidden_dim, hidden_dim, 2, 2)
 
     def forward(self, samples: NestedTensor):
         """ The forward expects a NestedTensor, which consists of:
@@ -62,22 +67,27 @@ class DETR(nn.Module):
 
         src, mask = features[-1].decompose()
         assert mask is not None
-        hs = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1])[0]
+        query_B = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1])[0]
+        print(query_B.size())
+        hs = self.transformer_BEV(self.input_proj(src), mask, self.query_embed.weight, pos[-1], query_B)[0]
 
         outputs_class = self.class_embed(hs)
         outputs_coord = self.bbox_embed(hs).sigmoid()
-        out = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1]}
+        outputs_bev = self.bev_embed(hs)
+        outputs_dim = self.dim_embed(hs)
+        outputs_angle = self.angle_embed(hs)
+        out = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1], 'pred_bev': outputs_bev[-1], 'pred_dim': outputs_dim[-1], 'pred_angle': outputs_angle[-1]}
         if self.aux_loss:
-            out['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_coord)
+            out['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_coord, outputs_bev, outputs_dim, outputs_angle)
         return out
 
     @torch.jit.unused
-    def _set_aux_loss(self, outputs_class, outputs_coord):
+    def _set_aux_loss(self, outputs_class, outputs_coord, outputs_bev, outputs_dim, outputs_angle):
         # this is a workaround to make torchscript happy, as torchscript
         # doesn't support dictionary with non-homogeneous values, such
         # as a dict having both a Tensor and a list.
-        return [{'pred_logits': a, 'pred_boxes': b}
-                for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
+        return [{'pred_logits': a, 'pred_boxes': b, 'pred_bev': c, 'pred_dim': d, 'pred_angle': e}
+                for a, b, c, d, e in zip(outputs_class[:-1], outputs_coord[:-1], outputs_bev[:-1], outputs_dim[:-1], outputs_angle[:-1])]
 
 
 class SetCriterion(nn.Module):
@@ -190,6 +200,67 @@ class SetCriterion(nn.Module):
         }
         return losses
 
+    def loss_bev(self, outputs, targets, indices, num_boxes):
+        assert 'pred_bev' in outputs
+        idx = self._get_src_permutation_idx(indices)
+        src_bev = outputs['pred_bev'][idx].squeeze()
+        target_bev = torch.cat([t['bev'][i] for t, (_, i) in zip(targets, indices)])
+        loss = F.l1_loss(src_bev, target_bev, reduction='none')
+        losses = {}
+        losses['loss_bev'] = loss.sum() / num_boxes
+        return losses
+
+    def loss_dims(self, outputs, targets, indices, num_boxes):
+        assert 'pred_dim' in outputs
+        # idx = self._get_src_permutation_idx(indices)
+        # src_dim = outputs['pred_dim'][idx].squeeze()
+        # target_dim = torch.cat([t['dim'][i] for t, (_, i) in zip(targets, indices)])
+        # loss = F.mse_loss(src_dim, target_dim)
+        # losses = {'loss_bev' : loss}
+
+        idx = self._get_src_permutation_idx(indices)
+        src_dims = outputs['pred_dim'][idx]
+        target_dims = torch.cat([t['dim'][i] for t, (_, i) in zip(targets, indices)], dim=0)
+
+        dimension = target_dims.clone().detach()
+        dim_loss = torch.abs(src_dims - target_dims)
+        dim_loss /= dimension
+        with torch.no_grad():
+            compensation_weight = F.l1_loss(src_dims, target_dims) / dim_loss.mean()
+        dim_loss *= compensation_weight
+        losses = {}
+        losses['loss_dim'] = dim_loss.sum() / num_boxes
+
+        return losses
+    
+    def loss_angles(self, outputs, targets, indices, num_boxes):  
+
+        idx = self._get_src_permutation_idx(indices)
+        heading_input = outputs['pred_angle'][idx]
+        target_heading_cls = torch.cat([t['heading_bin'][i] for t, (_, i) in zip(targets, indices)], dim=0)
+        target_heading_res = torch.cat([t['heading_res'][i] for t, (_, i) in zip(targets, indices)], dim=0)
+
+        heading_input = heading_input.view(-1, 24)
+        heading_target_cls = target_heading_cls.view(-1).long()
+        heading_target_res = target_heading_res.view(-1)
+
+        # classification loss
+        heading_input_cls = heading_input[:, 0:12]
+        cls_loss = F.cross_entropy(heading_input_cls, heading_target_cls, reduction='none')
+
+        # regression loss
+        heading_input_res = heading_input[:, 12:24]
+        cls_onehot = torch.zeros(heading_target_cls.shape[0], 12).cuda().scatter_(dim=1, index=heading_target_cls.view(-1, 1), value=1)
+        heading_input_res = torch.sum(heading_input_res * cls_onehot, 1)
+        reg_loss = F.l1_loss(heading_input_res, heading_target_res, reduction='none')
+        
+        angle_loss = cls_loss + reg_loss
+        losses = {}
+        losses['loss_angle'] = angle_loss.sum() / num_boxes 
+        return losses
+
+    
+
     def _get_src_permutation_idx(self, indices):
         # permute predictions following indices
         batch_idx = torch.cat([torch.full_like(src, i) for i, (src, _) in enumerate(indices)])
@@ -203,11 +274,20 @@ class SetCriterion(nn.Module):
         return batch_idx, tgt_idx
 
     def get_loss(self, loss, outputs, targets, indices, num_boxes, **kwargs):
+        # loss_map = {
+        #     'labels': self.loss_labels,
+        #     'cardinality': self.loss_cardinality,
+        #     'boxes': self.loss_boxes,
+        #     'masks': self.loss_masks
+        # }
         loss_map = {
             'labels': self.loss_labels,
             'cardinality': self.loss_cardinality,
             'boxes': self.loss_boxes,
-            'masks': self.loss_masks
+            'masks': self.loss_masks,
+            'bev': self.loss_bev,
+            'dim': self.loss_dims,
+            'angle': self.loss_angles
         }
         assert loss in loss_map, f'do you really want to compute {loss} loss?'
         return loss_map[loss](outputs, targets, indices, num_boxes, **kwargs)
@@ -310,7 +390,8 @@ def build(args):
     # you should pass `num_classes` to be 2 (max_obj_id + 1).
     # For more details on this, check the following discussion
     # https://github.com/facebookresearch/detr/issues/108#issuecomment-650269223
-    num_classes = 20 if args.dataset_file != 'coco' else 91
+    # num_classes = 20 if args.dataset_file != 'coco' else 91
+    num_classes = args.num_classes+1 if args.dataset_file != 'coco' else 91
     if args.dataset_file == "coco_panoptic":
         # for panoptic, we just add a num_classes that is large enough to hold
         # max_obj_id + 1, but the exact value doesn't really matter
@@ -320,10 +401,12 @@ def build(args):
     backbone = build_backbone(args)
 
     transformer = build_transformer(args)
+    transformer_BEV = build_transformer_BEV(args)
 
     model = DETR(
         backbone,
         transformer,
+        transformer_BEV,
         num_classes=num_classes,
         num_queries=args.num_queries,
         aux_loss=args.aux_loss,
@@ -333,6 +416,9 @@ def build(args):
     matcher = build_matcher(args)
     weight_dict = {'loss_ce': 1, 'loss_bbox': args.bbox_loss_coef}
     weight_dict['loss_giou'] = args.giou_loss_coef
+    weight_dict['loss_bev'] = args.bev_loss_coef
+    weight_dict['loss_dim'] = args.dim_loss_coef
+    weight_dict['loss_angle'] = args.angle_loss_coef
     if args.masks:
         weight_dict["loss_mask"] = args.mask_loss_coef
         weight_dict["loss_dice"] = args.dice_loss_coef
@@ -343,7 +429,7 @@ def build(args):
             aux_weight_dict.update({k + f'_{i}': v for k, v in weight_dict.items()})
         weight_dict.update(aux_weight_dict)
 
-    losses = ['labels', 'boxes', 'cardinality']
+    losses = ['labels', 'boxes', 'cardinality', 'bev', 'dim', 'angle']
     if args.masks:
         losses += ["masks"]
     criterion = SetCriterion(num_classes, matcher=matcher, weight_dict=weight_dict,
